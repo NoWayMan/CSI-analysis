@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal CSI/NPS Survey Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+:root{
+  --primary:#1a73e8;--primary-light:#e8f0fe;--secondary:#188038;--secondary-light:#e6f4ea;
+  --danger:#c5221f;--danger-light:#fce8e6;--warning:#e8710a;--warning-light:#fff3e0;
+  --dark:#202124;--muted:#5f6368;--bg:#f8f9fa;--line:#dadce0;--soft:#f1f3f4;
+}
+*{box-sizing:border-box} body{font-family:'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--dark);margin:0;padding:24px;line-height:1.45}
+.container{max-width:1720px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.06);padding:30px}
+h1{font-size:25px;margin:0 0 8px;color:var(--primary);display:flex;gap:10px;align-items:center}
+.subtitle{color:var(--muted);font-size:13px;margin-bottom:22px}.version{font-size:12px;background:var(--primary-light);color:#174ea6;padding:4px 8px;border-radius:999px;font-weight:700}
+.header-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:var(--soft);padding:18px;border-radius:10px;margin-bottom:20px;border:1px solid var(--line)}
+.file-box{background:#fff;border:2px dashed #b4d1fa;border-radius:8px;padding:16px}.file-box h4{margin:0 0 10px;color:var(--primary);font-size:15px}.file-box input{width:100%;font-size:13px}.hint{font-size:11px;color:var(--muted);margin-top:6px}
+.tabs{display:none;gap:5px;border-bottom:2px solid var(--line);margin-top:18px;overflow-x:auto}.tab{padding:11px 17px;background:var(--soft);color:var(--muted);border-radius:8px 8px 0 0;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;border:1px solid transparent}.tab.active{background:#fff;color:var(--primary);border-color:var(--line);border-bottom-color:#fff}.tab:hover{color:var(--dark)}
+.tab-content{display:none;padding:22px 0}.tab-content.active{display:block}
+.panel{background:var(--primary-light);border:1px solid #c6dafc;border-radius:10px;padding:18px;margin-bottom:18px}.panel.orange{background:var(--warning-light);border-color:#ffcc80}.panel.gray{background:#fafafa;border-color:var(--line)}
+.control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}.control-group{display:flex;flex-direction:column;gap:6px}.control-group label{font-size:12px;font-weight:800;color:#174ea6}.panel.orange label{color:var(--warning)}
+select,input[type="text"],input[type="number"]{padding:8px 9px;border:1px solid #c9cdd1;border-radius:6px;font-size:13px;background:#fff;outline:none;width:100%}select:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(26,115,232,.12)}
+button{border:0;border-radius:6px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;background:var(--primary);color:#fff}button:hover{filter:brightness(.95)}.btn-secondary{background:var(--secondary)}.btn-ghost{background:#fff;color:#444;border:1px solid #c9cdd1}.btn-danger{background:var(--danger)}.btn-small{padding:5px 8px;font-size:11px}.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.result-area{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:14px;min-height:180px;overflow:auto}.placeholder{color:#999;text-align:center;padding:50px 0;font-size:14px}.note{font-size:12px;color:var(--muted);margin:6px 0}.warn{background:var(--warning-light);border-left:4px solid var(--warning);padding:10px 12px;border-radius:5px;color:#8a4b00;font-size:12px;margin:8px 0}.ok{background:var(--secondary-light);border-left:4px solid var(--secondary);padding:10px 12px;border-radius:5px;color:#137333;font-size:12px;margin:8px 0}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:12px 0}.kpi{border:1px solid var(--line);border-radius:10px;background:#fff;padding:15px}.kpi .label{font-size:12px;color:var(--muted);font-weight:700}.kpi .value{font-size:25px;font-weight:900;color:var(--dark);margin-top:5px}.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;background:#fff}th,td{border:1px solid var(--line);padding:8px 10px;text-align:center;vertical-align:middle}th{background:var(--soft);font-weight:800;color:#333;position:sticky;top:0;z-index:2}.th-blue{background:var(--primary-light)!important;color:#174ea6!important}.th-green{background:var(--secondary-light)!important;color:#137333!important}.th-orange{background:var(--warning-light)!important;color:#a14200!important}.th-red{background:var(--danger-light)!important;color:var(--danger)!important}.left{text-align:left}.bold{font-weight:800}.small{font-size:11px;color:var(--muted)}.tiny{font-size:10px;color:var(--muted)}.score{font-weight:900;font-size:13px}.rank{font-weight:800}.pos{color:#137333;font-weight:800}.neg{color:var(--danger);font-weight:800}.zero{color:#777;font-weight:800}
+.checklist{background:#fff;border:1px solid #c9cdd1;border-radius:8px;padding:10px}.check-actions{display:flex;gap:5px;margin:6px 0;flex-wrap:wrap}.check-scroll{height:170px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.check-scroll label{display:flex;gap:6px;align-items:flex-start;font-weight:400;color:#333;margin:0;padding:3px 2px;cursor:pointer;font-size:12px}.check-scroll label:hover{background:#f7f8f9}.search-box{font-size:12px;padding:7px}.chart-wrap{height:520px;position:relative;width:100%;margin:12px 0}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}.insights{background:#f8fbff;border:1px solid #c6dafc;border-radius:10px;padding:14px;margin-top:12px}.insights h3{font-size:14px;margin:0 0 8px;color:#174ea6}.insights ul{margin:0;padding-left:20px}.insights li{margin:5px 0;font-size:13px}
+
+.codebook-guide{margin-top:10px;border:1px solid #d6e2fb;border-radius:8px;background:#f8fbff;padding:10px}
+.codebook-guide summary{cursor:pointer;font-size:12px;font-weight:800;color:#174ea6}
+.codebook-guide textarea{width:100%;min-height:360px;margin-top:8px;padding:10px;border:1px solid #c9cdd1;border-radius:6px;font-family:'Consolas','Malgun Gothic',monospace;font-size:12px;line-height:1.45;resize:vertical;background:#fff;color:#202124}
+
+.mr-bundle-card{border:1px solid var(--line);border-radius:10px;background:#fff;margin:14px 0;padding:14px}
+.mr-bundle-card h3{margin:0 0 6px;font-size:15px;color:#174ea6}
+.mr-bundle-meta{font-size:11px;color:var(--muted);margin:4px 0 10px;white-space:normal}
+.mr-var-tags{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 10px}
+.mr-var-tags span{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px 7px;font-size:10px;color:#444}
+
+.spss-cross-panel{background:#eaf3ff;border-color:#bdd6fb;padding:16px}
+.spss-cross-dialog{display:grid;grid-template-columns:minmax(340px,1.05fr) minmax(520px,1fr) 92px;gap:12px;align-items:stretch}
+.spss-var-panel,.spss-target-panel{background:#f7fbff;border:1px solid #8db8f0;border-radius:6px;padding:8px}
+.spss-field-title{font-size:12px;font-weight:900;color:#222;margin:0 0 6px;letter-spacing:-.2px}
+.spss-var-search{height:30px;margin-bottom:7px;font-size:12px;border-color:#9dbceb;background:#fff}
+.spss-var-list{height:445px;overflow:auto;border:1px solid #2d7ae5;background:#fff;border-radius:3px;padding:3px}
+.spss-var-item{display:flex;align-items:center;gap:7px;padding:3px 5px;border-radius:3px;font-size:12px;cursor:pointer;line-height:1.25;color:#111;min-height:24px}
+.spss-var-item:hover{background:#edf5ff}.spss-var-item.selected{background:#cfe3ff;outline:1px solid #5b9df2}.spss-var-item.returned{background:#fff3cd;outline:2px solid #fbbc04;transition:background .25s,outline .25s}
+.spss-var-icons{width:18px;display:inline-flex;justify-content:center;flex:0 0 18px}.spss-var-name{font-weight:800;color:#174ea6}.spss-var-label{color:#333}.spss-var-muted{color:#777;font-size:11px}
+.spss-target-grid{display:grid;grid-template-rows:1fr 1fr 1.05fr;gap:10px}.spss-target-block{display:grid;grid-template-columns:42px 1fr;grid-template-rows:auto 1fr;column-gap:8px}.spss-target-block .spss-field-title{grid-column:2}.spss-target-arrow{grid-column:1;grid-row:2;align-self:center;width:34px;height:30px;padding:0;border:1px solid #2d7ae5;background:linear-gradient(#e9f2ff,#9dc6ff);color:#174ea6;font-size:17px;border-radius:6px}.spss-target-arrow:hover{filter:none;background:linear-gradient(#f5f9ff,#b8d7ff)}.spss-target-arrow.return-mode{background:linear-gradient(#fff8e1,#ffd666);border-color:#fbbc04;color:#7a4a00}.spss-target-arrow.return-mode:hover{background:linear-gradient(#fffdf4,#ffe08a)}
+.spss-target-box{grid-column:2;grid-row:2;min-height:92px;border:1px solid #2d7ae5;background:#fff;border-radius:3px;padding:5px;overflow:auto}.spss-target-box.layer{min-height:118px}.spss-target-empty{color:#9aa0a6;font-size:12px;padding:8px}.spss-target-item{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #d9e6fb;background:#f8fbff;border-radius:4px;margin:2px 0;padding:5px 6px;font-size:12px;cursor:pointer}.spss-target-item:hover{background:#edf5ff}.spss-target-item.selected{background:#cfe3ff;border-color:#5b9df2;outline:1px solid #5b9df2}.spss-target-item b{color:#174ea6}.spss-target-remove{border:0;background:transparent;color:#777;padding:0 2px;font-size:16px;line-height:1;cursor:pointer}.spss-target-remove:hover{color:#c5221f;filter:none}
+.spss-layer-nav{display:flex;justify-content:space-between;align-items:center;margin:0 0 5px;color:#3c4043;font-size:11px}.spss-layer-nav button{padding:4px 8px;font-size:11px;background:#e8f0fe;color:#9aa0a6;border:1px solid #c8d7ee;cursor:not-allowed}.spss-side-buttons{display:flex;flex-direction:column;gap:6px}.spss-side-buttons button{width:100%;padding:7px 6px;font-size:12px;background:linear-gradient(#eaf4ff,#76b8ff);border:1px solid #2d7ae5;color:#05386f}.spss-side-buttons button.primary{background:linear-gradient(#2682f7,#0b67d8);color:#fff}.spss-side-buttons button.ghost{background:linear-gradient(#fff,#e8f0fe);color:#333}.spss-side-buttons button:disabled{opacity:.58;cursor:not-allowed;filter:none}
+.spss-cross-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;align-items:end;margin-top:12px;padding:10px;background:#f8fbff;border:1px solid #c6dafc;border-radius:7px}.spss-cross-options label{font-size:12px;font-weight:800;color:#174ea6}.spss-option-checks{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #c9cdd1;border-radius:6px;padding:7px 9px;min-height:36px}.spss-option-checks label{display:flex;align-items:center;gap:5px;color:#333;font-weight:700;margin:0}.spss-hidden-controls{display:none}.spss-selected-status{font-size:11px;color:#5f6368;margin-top:6px}
+
+.cross-spss-output{background:#fff;padding:4px 0 12px;overflow:auto}
+.cross-spss-title{text-align:center;font-size:15px;font-weight:900;margin:4px 0 10px;color:#111}
+.cross-spss-percent-note{font-size:12px;font-weight:800;margin:0 0 6px;color:#111}
+.cross-spss-table{width:auto;min-width:760px;border-collapse:collapse;font-size:12px;white-space:nowrap;background:#fff;margin-bottom:18px}
+.cross-spss-table th,.cross-spss-table td{border:1px solid #c9cdd1;padding:4px 8px;text-align:center;vertical-align:middle;line-height:1.25;position:static}
+.cross-spss-table th{background:#fff;color:#174a6a;font-weight:500}
+.cross-spss-table .stub-head{background:#fff;color:#174a6a;text-align:left;font-weight:500}
+.cross-spss-table .stub,.cross-spss-table .stub-cat,.cross-spss-table .stub-var{background:#e6e6e6;color:#174a6a;text-align:left}
+.cross-spss-table .stub{vertical-align:top;font-weight:500;min-width:88px}
+.cross-spss-table .stub-var{vertical-align:top;min-width:150px}
+.cross-spss-table .stub-cat{min-width:86px}
+.cross-spss-table .total-row .stub,.cross-spss-table .total-row .stub-var,.cross-spss-table .total-row .stub-cat{background:#e6e6e6;font-weight:500}
+.cross-spss-table .col-title{background:#fff;color:#174a6a;font-weight:500;text-align:center}
+.cross-spss-table .num{font-variant-numeric:tabular-nums;color:#111}
+.cross-spss-table .thin-top td,.cross-spss-table .thin-top th{border-top:1.5px solid #aaa}
+.cross-spss-layer-caption{font-size:13px;font-weight:800;margin:14px 0 6px;color:#174a6a}
+.cross-exclude-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 10px;padding:9px 10px;background:#fff;border:1px solid #c9cdd1;border-radius:7px;font-size:12px}
+.cross-exclude-toolbar .chip{display:inline-flex;gap:6px;align-items:center;background:#f1f3f4;border:1px solid #dadce0;border-radius:999px;padding:3px 8px;color:#333}
+.cross-exclude-toolbar .chip button{background:transparent;color:#5f6368;border:0;padding:0 2px;font-size:12px;line-height:1;cursor:pointer}
+.cross-row-remove{margin-left:6px;padding:2px 5px;font-size:10px;border:1px solid #c9cdd1;background:#fff;color:#444;border-radius:4px;cursor:pointer}
+.cross-row-remove:hover{background:#fce8e6;color:#c5221f;border-color:#f3b4b2}
+
+@media(max-width:1100px){.spss-cross-dialog{grid-template-columns:1fr}.spss-side-buttons{flex-direction:row;flex-wrap:wrap}.spss-side-buttons button{width:auto}.spss-var-list{height:260px}.spss-target-grid{grid-template-rows:auto}}
+
+
+.drag-handle{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:4px;border:1px solid #c9cdd1;border-radius:4px;background:#fff;color:#174ea6;font-weight:900;cursor:grab;user-select:none;touch-action:none}
+.drag-handle:active{cursor:grabbing}
+.row-move-btn{margin-right:3px;padding:4px 6px;font-size:10px;line-height:1}
+.draggable-row.dragging{opacity:.55;outline:2px dashed var(--primary)}
+.draggable-row.drag-over-top{box-shadow:inset 0 3px 0 var(--primary)}
+.draggable-row.drag-over-bottom{box-shadow:inset 0 -3px 0 var(--primary)}
+.cross-drag-help{font-size:11px;color:var(--muted);align-self:center}
+
+@media(max-width:900px){body{padding:10px}.container{padding:16px}.header-panel,.two-col{grid-template-columns:1fr}.tabs{font-size:12px}.result-area{padding:10px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 Universal CSI/NPS Survey Analytics <span class="version">v3.15 · Overview Sample Distribution</span></h1>
+  <div class="subtitle">업종별 고정 로직을 최소화하고, 코드북 호환성과 만족도 비교 UX를 강화한 범용 고객만족도 조사 분석 페이지입니다.</div>
+
+  <div class="header-panel">
+    <div class="file-box">
+      <h4>🗂️ 원본 데이터 파일 (.xlsx, .csv)</h4>
+      <input type="file" id="dataUpload" accept=".xlsx,.csv">
+      <div class="hint">첫 번째 시트의 1행을 변수명으로 인식합니다. 숫자형 문자열은 자동 숫자 변환합니다.</div>
+    </div>
+    <div class="file-box">
+      <h4>📖 변수사전 / 코드북 파일 (.xlsx, .csv)</h4>
+      <input type="file" id="codebookUpload" accept=".xlsx,.csv">
+      <div class="hint">문항별 1행 구조와 보기항목 상세 구조를 모두 지원합니다. 예: 변수명 / 문항라벨 / 보기항목(1=예 | 2=아니오)</div>
+      <details class="codebook-guide">
+        <summary>🧠 SAV 파일을 코드북으로 변환하는 AI 프롬프트 보기</summary>
+        <div class="note">SAV 원본을 AI에 업로드한 뒤 아래 프롬프트를 함께 입력하면, 이 웹페이지에 바로 업로드 가능한 코드북 형식으로 변환할 수 있습니다.</div>
+        <textarea id="savCodebookPrompt" readonly onclick="this.select()">첨부한 SPSS SAV 파일을 읽어서, 아래 웹페이지에서 바로 업로드 가능한 Excel 코드북을 만들어줘.
+
+목표:
+- SAV 파일의 변수명, 변수 라벨, 값 라벨, 결측값, 척도 정보를 추출한다.
+- 문항별 1행 코드북과 보기항목 상세 시트를 모두 생성한다.
+- 결과물은 .xlsx 파일로 제공한다.
+- 파일명은 `SAV_레이블_코드북_문항별1행.xlsx`로 저장한다.
+
+반드시 생성할 시트 1: `문항별 코드북`
+아래 컬럼을 이 순서로 만들어줘.
+1. No
+2. 변수명
+3. 문항/변수 라벨
+4. 변수유형
+5. 분석유형
+6. 척도/범위
+7. 보기항목(코드=라벨)
+8. 결측값
+9. 비고
+
+시트 1 작성 규칙:
+- 변수는 SAV 파일에 있는 순서대로 전부 작성한다. 누락하지 않는다.
+- `변수명`은 SAV의 원래 변수명을 그대로 쓴다.
+- `문항/변수 라벨`은 SAV의 variable label을 사용한다. 라벨이 없으면 변수명을 넣는다.
+- `보기항목(코드=라벨)`은 value label을 `1=남성 | 2=여성` 형식으로 한 셀에 나열한다.
+- 보기항목 구분자는 반드시 ` | `를 사용한다.
+- 코드와 라벨 사이에는 반드시 `=`를 사용한다.
+- 값 라벨이 없는 연속형 숫자 변수는 보기항목을 비워둔다.
+- 사용자 결측값 또는 시스템 결측값이 있으면 `결측값` 컬럼에 작성한다. 예: `999=모름`, `888=비해당`
+- 0~10점 추천의향 문항은 분석유형에 `NPS`라고 표기한다.
+- 0~100점 또는 1~5점/1~7점/1~10점 만족도 문항은 분석유형에 `만족도`라고 표기한다.
+- 복수응답 변수는 분석유형에 `다중응답`이라고 표기한다.
+- 자유응답/주관식 변수는 분석유형에 `VOC`라고 표기한다.
+- 성별, 연령대, 지역, 고객유형, 기업/브랜드 등은 분석유형에 `분류변수`라고 표기한다.
+- ID, 응답자번호, 조사일자 등은 분석유형에 `관리변수`라고 표기한다.
+
+반드시 생성할 시트 2: `보기항목 상세`
+아래 컬럼을 이 순서로 만들어줘.
+1. 변수명
+2. 코드
+3. 보기 라벨
+4. 순서
+
+시트 2 작성 규칙:
+- value label이 있는 모든 변수에 대해 코드별로 한 행씩 작성한다.
+- 변수명은 시트 1의 변수명과 정확히 동일해야 한다.
+- 코드는 숫자/문자를 SAV 원값 기준으로 작성한다.
+- 보기 라벨은 SAV의 value label을 그대로 작성한다.
+- 순서는 value label의 코드 순서를 기준으로 작성한다.
+
+품질 점검 규칙:
+- 코드북 생성 후 전체 변수 수, 변수 라벨 반영 수, 값 라벨 반영 수를 요약해줘.
+- 값 라벨이 없는 변수 목록을 별도로 요약해줘.
+- 라벨이 비어 있거나 중복 변수명이 있으면 알려줘.
+- 0~10점, 1~10점, 0~100점처럼 점수형으로 보이는 변수는 척도/범위를 추정해서 작성하되, 확실하지 않으면 비고에 `확인 필요`라고 표기해줘.
+- 임의로 보기항목을 새로 만들지 말고, SAV에 저장된 value label을 우선 사용해줘.
+- 단, 실제 데이터 값은 존재하지만 value label이 없는 범주형 변수로 보이면 비고에 `값라벨 없음`이라고 표기해줘.
+
+출력:
+- 최종 결과는 반드시 Excel 파일로 만들어줘.
+- 가능하면 다운로드 가능한 파일 링크를 제공해줘.
+- 표를 화면에 길게 출력하지 말고, 요약만 보여줘.</textarea>
+        <div class="btn-row" style="margin-top:8px;">
+          <button type="button" class="btn-ghost btn-small" onclick="navigator.clipboard.writeText(document.getElementById('savCodebookPrompt').value); alert('프롬프트를 복사했습니다.');">프롬프트 복사</button>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" onclick="switchTab('overview')">① 조사개요</div>
+    <div class="tab" onclick="switchTab('compare')">② 만족도 비교</div>
+    <div class="tab" onclick="switchTab('nps')">③ NPS 분석</div>
+    <div class="tab" onclick="switchTab('ipa')">④ IPA</div>
+    <div class="tab" onclick="switchTab('crosstab')">⑤ 교차분석</div>
+    <div class="tab" onclick="switchTab('multi')">⑥ 다중응답</div>
+    <div class="tab" onclick="switchTab('voc')">⑦ VOC</div>
+    <div class="tab" onclick="switchTab('quality')">⑧ 데이터 품질</div>
+  </div>
+
+  <div id="overview" class="tab-content active">
+    <div class="panel">
+      <div class="control-grid">
+        <div class="control-group"><label>기업 / 브랜드 / 비교집단 변수</label><select id="ovCompany"></select></div>
+        <div class="control-group"><label>고객만족도(CSI) 변수</label><select id="ovCsi"></select></div>
+        <div class="control-group"><label>NPS 변수</label><select id="ovNps"></select></div>
+        <div class="control-group"><label>만족도 척도 변환</label><select id="scaleMode"><option value="auto">자동: 1~10점은 ×10, 0~100점은 유지</option><option value="raw">원점수 그대로</option><option value="x10">10점 척도 ×10</option><option value="norm10">1~10점 정규환산</option><option value="norm5">1~5점 정규환산</option></select></div>
+        <div class="control-group"><label>점수 표기</label><select id="scoreFormat"><option value="int">정수</option><option value="1">소수점 1자리</option></select></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="applyConfigAndRun()">분석 기준 적용</button></div>
+      </div>
+      <div class="note">※ 이 설정은 조사개요, 만족도 비교, NPS, IPA의 기본 기준으로 사용됩니다. 업종 전용 자동 탭은 제거했습니다.</div>
+    </div>
+    <div class="panel gray">
+      <div class="control-group">
+        <label>기업별 표본분포 상세 기준 선택</label>
+        <div class="checklist" id="ovDistChecklistBox"></div>
+      </div>
+      <div class="note">성별·연령대·지역 후보는 자동 선택됩니다. 추가로 보고 싶은 분류 기준을 직접 선택하면 조사개요 하단에 기업별 n/% 표가 생성됩니다.</div>
+      <div class="btn-row" style="margin-top:8px;"><button class="btn-ghost btn-small" onclick="generateOverview()">표본분포 다시 생성</button></div>
+    </div>
+    <div id="overviewResult" class="result-area"><p class="placeholder">원본 데이터 업로드 후 분석 기준을 선택하세요.</p></div>
+  </div>
+
+  <div id="compare" class="tab-content">
+    <div class="panel orange">
+      <div class="control-grid compare-control-grid">
+        <div class="control-group compare-ref-control"><label>기준 기업</label><select id="cmpRefCompany"></select></div>
+        <div class="control-group"><label>1차 분류</label><select id="cmpGroup1"></select></div>
+        <div class="control-group"><label>2차 분류</label><select id="cmpGroup2"></select></div>
+        <div class="control-group"><label>최대 세그먼트 조합</label><input type="number" id="cmpMaxSeg" value="20" min="1" max="100"></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateCompare()">만족도 비교표 생성</button></div>
+      </div>
+      <div class="note">행은 선택한 만족도 요인, 열은 점수 → 기준기업 대비 격차 → 순위 → n 순서로 표시합니다. 점수·격차·순위는 조사개요의 점수 표기 단위(정수/소수점 1자리)에 맞춰 산정합니다. 0~100점 스케일 후보는 기본 선택되며, 표 생성 후 행은 드래그로 정렬하거나 삭제할 수 있습니다.</div>
+    </div>
+    <div class="panel gray">
+      <div class="control-group"><label>비교할 만족도 요인 선택</label><div class="checklist" id="cmpChecklistBox"></div></div>
+      <div class="control-group" style="margin-top:12px;">
+        <label>행 순서 직접 지정</label>
+        <textarea id="cmpPasteOrder" class="search-box" style="height:72px; resize:vertical;" placeholder="변수명을 원하는 행 순서대로 붙여넣기
+예: Q1_1
+Q1_2
+Q1_3 또는 [Q1_1] 문항라벨"></textarea>
+        <div class="check-actions">
+          <button class="btn-ghost btn-small" onclick="applyComparePastedOrder()">붙여넣은 순서 적용</button>
+          <button class="btn-ghost btn-small" onclick="clearComparePastedOrder()">순서 초기화</button>
+        </div>
+        <div id="cmpOrderStatus" class="note">※ 붙여넣은 변수 순서대로 만족도 비교표의 행이 생성됩니다. 변수명은 대소문자 구분 없이 매칭됩니다.</div>
+      </div>
+    </div>
+    <div id="compareResult" class="result-area"><p class="placeholder">만족도 요인을 선택한 뒤 비교표를 생성하세요.</p></div>
+  </div>
+
+  <div id="nps" class="tab-content">
+    <div class="panel">
+      <h3 style="margin-top:0">NPS 점수 비교</h3>
+      <div class="control-grid">
+        <div class="control-group"><label>NPS 점수 변수</label><div class="checklist" id="npsScoreBox"></div></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateNpsScoreOnly()">NPS 점수 비교 생성</button></div>
+      </div>
+      <div class="note">[NPS]가 포함된 모든 추천의향 점수 변수를 선택할 수 있습니다. 점수 비교는 행=변수, 열=기업 구조로 표시합니다.</div>
+    </div>
+    <div id="npsScoreResult" class="result-area"><p class="placeholder">NPS 점수 변수를 선택한 뒤 점수 비교표를 생성하세요.</p></div>
+
+    <div class="panel gray" style="margin-top:18px;">
+      <h3 style="margin-top:0">NPS 사유 연계 분석</h3>
+      <div class="control-grid">
+        <div class="control-group"><label>사유 연계 기준 NPS 변수</label><select id="npsReasonBaseVar" onchange="autoMapNpsReasons(false)"></select></div>
+        <div class="control-group"><label>사유 표시 범위</label><select id="npsReasonMode"><option value="all">전체 사유</option><option value="promoter">추천 사유</option><option value="passive">중립 사유</option><option value="detractor">비추천 사유</option></select></div>
+        <div class="control-group"><label>추천 사유 변수</label><select id="npsPromoterReasonVar"></select></div>
+        <div class="control-group"><label>중립 사유 변수</label><select id="npsPassiveReasonVar"></select></div>
+        <div class="control-group"><label>비추천 사유 변수</label><select id="npsDetractorReasonVar"></select></div>
+        <div class="control-group"><label>&nbsp;</label><button class="btn-secondary" onclick="autoMapNpsReasons(true)">사유 변수 자동 매칭</button></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateNpsReasonOnly()">사유표 생성</button></div>
+      </div>
+      <div class="note">예: A1이 NPS 점수이면 A2/A3/A4를 추천/중립/비추천 사유로 자동 매칭합니다. 매칭이 맞지 않으면 드롭다운에서 직접 수정하세요.</div>
+      <div id="npsReasonMapStatus" class="note"></div>
+    </div>
+    <div id="npsReasonResult" class="result-area"><p class="placeholder">사유 연계 기준 NPS 변수와 추천/중립/비추천 사유 변수를 확인한 뒤 사유표를 생성하세요.</p></div>
+  </div>
+
+  <div id="ipa" class="tab-content">
+    <div class="panel orange">
+      <div class="control-grid">
+        <div class="control-group"><label>분석 기업</label><select id="ipaCompanyFilter"></select></div>
+        <div class="control-group"><label>종속 변수(Y)</label><select id="ipaTarget"></select></div>
+        <div class="control-group"><label>최대 분석 요인 수</label><input type="number" id="ipaMaxFactors" value="30" min="3" max="100"></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateIpa()">IPA 생성</button></div>
+      </div>
+      <div class="note">선택한 기업만 그래프에 반영할 수 있습니다. 로딩 방지를 위해 분석 요인 수를 제한합니다.</div>
+    </div>
+    <div class="panel gray"><div class="control-group"><label>IPA 하위 만족도 요인</label><div class="checklist" id="ipaChecklistBox"></div></div></div>
+    <div id="ipaResult" class="result-area"><div class="chart-wrap"><canvas id="ipaChart"></canvas></div><div id="ipaTable"></div></div>
+  </div>
+
+  <div id="crosstab" class="tab-content">
+    <div class="panel spss-cross-panel">
+      <div class="spss-cross-dialog">
+        <div class="spss-var-panel">
+          <div class="spss-field-title">변수 목록</div>
+          <input type="text" id="crossVarSearch" class="spss-var-search" placeholder="변수명/라벨 검색" onkeyup="filterCrossVarList()">
+          <div id="crossVarList" class="spss-var-list"><div class="spss-target-empty">원본 데이터를 업로드하면 변수가 표시됩니다.</div></div>
+          <div id="crossSelectedStatus" class="spss-selected-status">선택 변수: 없음</div>
+        </div>
+
+        <div class="spss-target-grid">
+          <div class="spss-target-block">
+            <div class="spss-field-title">행(O):</div>
+            <button type="button" id="crossRowArrow" class="spss-target-arrow" onclick="moveCrossSelected('row')" title="왼쪽 변수는 행으로 이동" aria-label="행으로 이동">➜</button>
+            <div id="crossRowBox" class="spss-target-box" ondblclick="clearCrossTarget('row')"></div>
+          </div>
+          <div class="spss-target-block">
+            <div class="spss-field-title">열(C):</div>
+            <button type="button" id="crossColArrow" class="spss-target-arrow" onclick="moveCrossSelected('col')" title="왼쪽 변수는 열로 이동" aria-label="열로 이동">➜</button>
+            <div id="crossColBox" class="spss-target-box" ondblclick="clearCrossTarget('col')"></div>
+          </div>
+          <div class="spss-target-block">
+            <div class="spss-field-title">레이어 1 / 1</div>
+            <button type="button" id="crossLayerArrow" class="spss-target-arrow" onclick="moveCrossSelected('layer')" title="왼쪽 변수는 레이어로 이동" aria-label="레이어로 이동">➜</button>
+            <div id="crossLayerBox" class="spss-target-box layer" ondblclick="clearCrossTarget('layer')">
+              <div class="spss-layer-nav"><button type="button" disabled>이전(V)</button><button type="button" disabled>다음(N)</button></div>
+              <div id="crossLayerItems"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="spss-side-buttons">
+          <button type="button" onclick="generateCrossTab()" class="primary">확인</button>
+          <button type="button" onclick="resetCrossTargets()" class="ghost">재설정</button>
+          <button type="button" onclick="document.getElementById('crossResult').scrollIntoView({behavior:'smooth',block:'start'});" class="ghost">결과 보기</button>
+          <button type="button" disabled>정확(X)…</button>
+          <button type="button" disabled>통계량(S)…</button>
+          <button type="button" disabled>셀(E)…</button>
+          <button type="button" disabled>형식(F)…</button>
+          <button type="button" disabled>부트스트랩(A)…</button>
+        </div>
+      </div>
+
+      <div class="spss-cross-options">
+        <div class="control-group"><label>퍼센트 기준</label><select id="crossPctBase"><option value="row">행 기준 100%</option><option value="col" selected>열 기준 100%</option><option value="total">전체 기준 100%</option></select></div>
+        <div class="control-group"><label>표시 옵션</label><div class="spss-option-checks"><label><input type="checkbox" id="crossShowN"> 셀 안 n 표시</label><label><input type="checkbox" id="crossShowPctSymbol" checked> % 기호 표시</label></div></div>
+        <div class="control-group"><label>행 보기항목 통합</label><input type="text" id="crossRowMerge" placeholder="예: 1+2=상위; 3+4+5=하위"></div>
+        <div class="control-group"><label>열 보기항목 통합</label><input type="text" id="crossColMerge" placeholder="예: 1+2=Top; 3+4=Middle; 5=Bottom"></div>
+      </div>
+      <div class="note">변수를 왼쪽 목록에서 선택한 뒤 행/열/레이어 화살표를 누르면 해당 영역으로 배치됩니다. 행/열/레이어 안의 변수를 클릭하면 해당 영역의 화살표가 ←로 바뀌며, 이때 화살표를 누르면 변수목록의 원래 위치로 복귀합니다. 열(C)에 여러 변수를 넣으면 변수 간 조합이 아니라 각 변수의 보기항목이 오른쪽으로 병렬 나열됩니다. 레이어 변수만 표 분리 기준으로 사용합니다. 결과표에서 행 항목의 삭제 버튼을 누르면 해당 행 항목을 Base에서 제외하고 비율을 즉시 재산정합니다.</div>
+
+      <div class="spss-hidden-controls">
+        <select id="crossRow1"></select><select id="crossRow2"></select><select id="crossRow3"></select>
+        <select id="crossCol"></select><select id="crossCol2"></select><select id="crossLayer1"></select>
+      </div>
+    </div>
+    <div id="crossResult" class="result-area"><p class="placeholder">행/열 변수를 SPSS 방식으로 배치한 뒤 확인을 누르세요.</p></div>
+  </div>
+
+  <div id="multi" class="tab-content">
+    <div class="panel orange">
+      <div class="control-grid">
+        <div class="control-group"><label>세그먼트 변수</label><select id="mrGroup"></select></div>
+        <div class="control-group"><label>다중응답 방식</label><select id="mrMode"><option value="category">변수값 결합형</option><option value="dichotomous">이분형 변수 나열형</option></select></div>
+        <div class="control-group"><label>묶음 기준</label><select id="mrBundleMode"><option value="manual">선택 변수 전체를 1개 묶음으로 분석</option><option value="sameOptions">보기항목이 같은 변수끼리 자동 분리</option></select></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateMultiResponse()">다중응답 집계</button></div>
+      </div>
+      <div class="note">※ ‘보기항목이 같은 변수끼리 자동 분리’를 선택하면, 선택한 변수 중 코드북의 보기항목 구조가 동일한 변수들을 자동으로 묶어 별도 표로 출력합니다.</div>
+    </div>
+    <div class="panel gray"><div class="control-group"><label>다중응답 묶음 변수</label><div class="checklist" id="mrChecklistBox"></div></div></div>
+    <div id="mrResult" class="result-area"><p class="placeholder">다중응답으로 집계할 변수를 선택하세요.</p></div>
+  </div>
+
+  <div id="voc" class="tab-content">
+    <div class="panel">
+      <div class="control-grid">
+        <div class="control-group"><label>기업/그룹 변수</label><select id="vocGroup"></select></div>
+        <div class="control-group"><label>최대 분석 응답 수</label><input type="number" id="vocMaxRows" value="1000" min="100" max="10000"></div>
+        <div class="control-group"><label>&nbsp;</label><button onclick="generateVoc()">VOC 분석</button></div>
+      </div>
+    </div>
+    <div class="panel gray"><div class="control-group"><label>자유응답/Text 변수</label><div class="checklist" id="vocChecklistBox"></div></div></div>
+    <div id="vocResult" class="result-area"><p class="placeholder">자유응답 변수를 선택하세요.</p></div>
+  </div>
+
+  <div id="quality" class="tab-content">
+    <div class="panel"><button onclick="generateQuality()">데이터 품질 점검 실행</button><span class="note"> 업로드 직후 표본수, 결측률, 코드북 매칭, 점수 후보 변수를 가볍게 점검합니다.</span></div>
+    <div id="qualityResult" class="result-area"><p class="placeholder">데이터 업로드 후 품질 점검을 실행하세요.</p></div>
+  </div>
+</div>
+
+<script>
+let rawData=[], headers=[], codebookVarMap={}, codebookValueMap={}, numericVars=[], scoreVars=[], textVars=[], npsScoreVars=[];
+let reasonVars={promoter:[], passive:[], detractor:[]};
+let varStats={}, charts={};
+let config={companyVar:'', csiVar:'', npsVar:'', scaleMode:'auto', scoreFormat:'int'};
+if(window.Chart && window.ChartDataLabels){ Chart.register(ChartDataLabels); }
+
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function isBlank(v){return v===null||v===undefined||String(v).trim()==='';}
+function toNum(v){if(isBlank(v)) return null; const n=Number(String(v).replace(/,/g,'')); return Number.isFinite(n)?n:null;}
+function normVal(v){let s=String(v??'').trim(); if(s.endsWith('.0')) s=s.slice(0,-2); return s;}
+function getVarLabel(v){return codebookVarMap[v]||v;}
+function getValueLabel(v,val){if(isBlank(val)) return '-'; const k=normVal(val); return (codebookValueMap[v]&&codebookValueMap[v][k])?codebookValueMap[v][k]:k;}
+function optLabel(v){return `[${v}] ${getVarLabel(v)}`;}
+function labelOption(v){return `<option value="${esc(v)}">${esc(optLabel(v))}</option>`;}
+function unique(arr){return Array.from(new Set(arr));}
+function mean(arr){let a=arr.filter(x=>typeof x==='number'&&Number.isFinite(x)); return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;}
+function pct(n,d,dig=1){return d?((n/d)*100).toFixed(dig)+'%':'-';}
+function fmtNumber(n,dig=1){return n===null||n===undefined||!Number.isFinite(n)?'-':Number(n).toLocaleString('ko-KR',{maximumFractionDigits:dig,minimumFractionDigits:dig});}
+function fmtScore(n){ if(n===null||n===undefined||!Number.isFinite(n)) return '-'; const digits=config.scoreFormat==='1'?1:0; return Number(n).toLocaleString('ko-KR',{maximumFractionDigits:digits,minimumFractionDigits:digits}); }
+function fmtNps(n){return n===null||n===undefined||!Number.isFinite(n)?'-':Number(n).toFixed(1);}
+function fmtGap(n){if(n===null||n===undefined||!Number.isFinite(n)) return '-'; const digits=config.scoreFormat==='1'?1:0; const v=Number(n).toFixed(digits); return n>0?`+${v}`:v;}
+function scoreBasisForCompare(n){
+  if(n===null||n===undefined||!Number.isFinite(n)) return null;
+  // 만족도 비교표의 점수·기준기업 대비 격차·순위는 조사개요의 점수 표기 단위와 동일하게 산정한다.
+  // 정수 선택 시 소수점 차이는 순위와 격차 계산에서 제외한다.
+  const digits=config.scoreFormat==='1'?1:0;
+  return Number(Number(n).toFixed(digits));
+}
+function signClass(n){return n>0?'pos':(n<0?'neg':'zero');}
+function downloadTable(wrapperId, sheetName){
+  const table=document.getElementById(wrapperId)?.querySelector('table');
+  if(!table) return alert('내보낼 표가 없습니다.');
+  const exportTable=table.cloneNode(true);
+  exportTable.querySelectorAll('[data-no-export]').forEach(el=>el.remove());
+  const wb=XLSX.utils.table_to_book(exportTable,{sheet:sheetName||'분석결과'});
+  XLSX.writeFile(wb,`${sheetName||'분석결과'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+function safeSheetName(name, fallback){
+  const cleaned=String(name||fallback||'Sheet').replace(/[\\\/\?\*\[\]\:]/g,'').slice(0,31);
+  return cleaned || fallback || 'Sheet';
+}
+function downloadAllTables(wrapperId, sheetBaseName){
+  const tables=Array.from(document.getElementById(wrapperId)?.querySelectorAll('table')||[]);
+  if(!tables.length) return alert('내보낼 표가 없습니다.');
+  if(tables.length===1) return downloadTable(wrapperId, sheetBaseName);
+  const wb=XLSX.utils.book_new();
+  const used={};
+  tables.forEach((table,i)=>{
+    const exportTable=table.cloneNode(true);
+    exportTable.querySelectorAll('[data-no-export]').forEach(el=>el.remove());
+    const ws=XLSX.utils.table_to_sheet(exportTable);
+    let base=safeSheetName(`${sheetBaseName||'분석결과'}_${i+1}`,`Sheet${i+1}`);
+    let name=base, n=1;
+    while(used[name]){
+      const suffix=`_${++n}`;
+      name=(base.slice(0,31-suffix.length)+suffix);
+    }
+    used[name]=true;
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  });
+  XLSX.writeFile(wb,`${sheetBaseName||'분석결과'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function readWorkbook(file, callback){
+  const reader=new FileReader();
+  reader.onload=e=>{const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:'array'}); callback(wb);};
+  reader.readAsArrayBuffer(file);
+}
+function sheetRows(wb, sheetName){return XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{defval:null});}
+
+document.getElementById('dataUpload').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  readWorkbook(file, wb=>{
+    const rows=sheetRows(wb, wb.SheetNames[0]); const clean=[];
+    rows.forEach(row=>{let nr={}, has=false; Object.keys(row).forEach(k=>{let val=row[k]; if(isBlank(val)){nr[k]=null;} else {const n=toNum(val); nr[k]=(n!==null && String(val).trim().match(/^-?[\d,.]+$/))?n:val; has=true;}}); if(has) clean.push(nr);});
+    rawData=clean; headers=clean.length?Object.keys(clean[0]):[]; analyzeVariables(); setupUI(); document.getElementById('tabs').style.display='flex';
+    alert(`원본 데이터 업로드 완료: ${clean.length.toLocaleString()}건, ${headers.length.toLocaleString()}개 변수`);
+  });
+});
+
+document.getElementById('codebookUpload').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  readWorkbook(file, wb=>{
+    const result=parseCodebook(wb); if(headers.length){analyzeVariables(); setupUI();}
+    let varCnt=Object.keys(codebookVarMap).length; let optCnt=Object.values(codebookValueMap).reduce((s,m)=>s+Object.keys(m||{}).length,0);
+    alert(`코드북 반영 완료: 변수 라벨 ${varCnt.toLocaleString()}개, 보기 라벨 ${optCnt.toLocaleString()}개`);
+  });
+});
+
+function cleanHeaderText(v){ return String(v ?? '').replace(/\s+/g,' ').trim(); }
+function sheetArrayRows(wb, sheetName){ return XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null}); }
+function findColumnIndex(headerRow, patterns){
+  for(const pat of patterns){
+    const idx=headerRow.findIndex(h=>pat.test(cleanHeaderText(h)));
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+function parseOptions(str){
+  const out={};
+  if(str===null || str===undefined) return out;
+  const raw=String(str).replace(/[{}\[\]"]/g,'').trim();
+  if(!raw) return out;
+  let chunks=raw.split(/\s*[|;\n]\s*/);
+  if(chunks.length===1 && (raw.match(/=/g)||[]).length>1) chunks=raw.split(/\s*,\s*/);
+  chunks.forEach(pair=>{
+    const txt=String(pair||'').trim();
+    if(!txt) return;
+    const m=txt.match(/^(.+?)(?:=|:)(.+)$/);
+    if(!m) return;
+    const key=normVal(m[1].replace(/["']/g,'').trim());
+    const label=m[2].replace(/["']/g,'').trim();
+    if(key && label) out[key]=label;
+  });
+  return out;
+}
+
+function isDetailValueSheetRows(rows){
+  const headerIdx=rows.findIndex(row=>{
+    const joined=(row||[]).map(cleanHeaderText).join(' ');
+    return /변수명|varname|variable/i.test(joined) && /코드|value/i.test(joined) && /보기\s*라벨|보기.*내용|값.*라벨|value.*label|option.*label/i.test(joined);
+  });
+  if(headerIdx<0) return false;
+  const headerRow=(rows[headerIdx]||[]).map(cleanHeaderText);
+  const varIdx=findColumnIndex(headerRow,[/^변수명$/i,/변수명/i,/varname/i,/variable/i]);
+  const codeIdx=findColumnIndex(headerRow,[/^코드$/i,/응답.*코드/i,/^value$/i,/값/i]);
+  const optLabelIdx=findColumnIndex(headerRow,[/보기\s*라벨/i,/보기.*내용/i,/값.*라벨/i,/value.*label/i,/option.*label/i]);
+  const questionLabelIdx=findColumnIndex(headerRow,[/문항\s*\/\s*변수\s*라벨/i,/문항.*라벨/i,/변수.*라벨/i,/문항.*내용/i]);
+  const optionPackIdx=findColumnIndex(headerRow,[/보기항목.*코드.*라벨/i,/보기항목\(.*코드.*라벨.*\)/i,/값\s*레이블/i,/값레이블/i,/코드\s*=\s*라벨/i]);
+  return varIdx>=0 && codeIdx>=0 && optLabelIdx>=0 && questionLabelIdx<0 && optionPackIdx<0;
+}
+
+function parseQuestionRowCodebook(rows){
+  let parsedVars=0, parsedValues=0;
+  if(isDetailValueSheetRows(rows)) return {parsedVars, parsedValues};
+  const headerIdx=rows.findIndex(row=>{
+    const joined=(row||[]).map(cleanHeaderText).join(' ');
+    return /변수명|varname|variable|^id$/i.test(joined) && /라벨|레이블|label|문항|설명|내용/i.test(joined);
+  });
+  if(headerIdx<0) return {parsedVars, parsedValues};
+  const headerRow=(rows[headerIdx]||[]).map(cleanHeaderText);
+  const varIdx=findColumnIndex(headerRow,[/^변수명$/i,/변수명/i,/varname/i,/variable/i,/^id$/i]);
+  const labelIdx=findColumnIndex(headerRow,[/문항\s*\/\s*변수\s*라벨/i,/문항.*라벨/i,/변수.*라벨/i,/문항.*내용/i,/레이블/i,/label/i,/설명/i,/내용/i]);
+  const optionIdx=findColumnIndex(headerRow,[/보기항목.*코드.*라벨/i,/보기항목/i,/값\s*레이블/i,/값레이블/i,/value.*label/i,/option/i,/코드\s*=\s*라벨/i,/보기/i]);
+  if(varIdx<0) return {parsedVars, parsedValues};
+  rows.slice(headerIdx+1).forEach(row=>{
+    const vName=row && row[varIdx]!==null && row[varIdx]!==undefined ? String(row[varIdx]).trim() : '';
+    if(!vName || /^no\.?$/i.test(vName)) return;
+    const label=(labelIdx>=0 && row[labelIdx]!==null && row[labelIdx]!==undefined && String(row[labelIdx]).trim()) ? String(row[labelIdx]).trim() : vName;
+    if(!codebookVarMap[vName]) { parsedVars++; codebookVarMap[vName]=label; }
+    else if(labelIdx>=0 && label && label!==vName) { codebookVarMap[vName]=label; }
+    codebookValueMap[vName]=codebookValueMap[vName]||{};
+    if(optionIdx>=0){
+      const pairs=parseOptions(row[optionIdx]);
+      Object.keys(pairs).forEach(k=>{ if(codebookValueMap[vName][k]===undefined) parsedValues++; codebookValueMap[vName][k]=pairs[k]; });
+    }
+  });
+  return {parsedVars, parsedValues};
+}
+function parseDetailValueCodebook(rows){
+  let parsedVars=0, parsedValues=0;
+  const headerIdx=rows.findIndex(row=>{
+    const joined=(row||[]).map(cleanHeaderText).join(' ');
+    return /변수명|varname|variable/i.test(joined) && /코드|value/i.test(joined) && /보기|라벨|label|내용/i.test(joined);
+  });
+  if(headerIdx<0) return {parsedVars, parsedValues};
+  const headerRow=(rows[headerIdx]||[]).map(cleanHeaderText);
+  const varIdx=findColumnIndex(headerRow,[/^변수명$/i,/변수명/i,/varname/i,/variable/i]);
+  const labelIdx=findColumnIndex(headerRow,[/문항\s*\/\s*변수\s*라벨/i,/문항.*라벨/i,/변수.*라벨/i,/레이블/i,/label/i,/설명/i,/내용/i]);
+  const codeIdx=findColumnIndex(headerRow,[/^코드$/i,/응답.*코드/i,/^value$/i,/값/i]);
+  const optLabelIdx=findColumnIndex(headerRow,[/보기\s*라벨/i,/보기.*내용/i,/값.*라벨/i,/value.*label/i,/option.*label/i,/라벨/i]);
+  if(varIdx<0 || codeIdx<0 || optLabelIdx<0) return {parsedVars, parsedValues};
+  rows.slice(headerIdx+1).forEach(row=>{
+    const vName=row && row[varIdx]!==null && row[varIdx]!==undefined ? String(row[varIdx]).trim() : '';
+    if(!vName) return;
+    const label=(labelIdx>=0 && row[labelIdx]!==null && row[labelIdx]!==undefined && String(row[labelIdx]).trim()) ? String(row[labelIdx]).trim() : vName;
+    if(!codebookVarMap[vName]) { codebookVarMap[vName]=label; parsedVars++; }
+    codebookValueMap[vName]=codebookValueMap[vName]||{};
+    const code=normVal(row[codeIdx]);
+    const optLabel=row[optLabelIdx]!==null && row[optLabelIdx]!==undefined ? String(row[optLabelIdx]).trim() : '';
+    if(code && optLabel){ if(codebookValueMap[vName][code]===undefined) parsedValues++; codebookValueMap[vName][code]=optLabel; }
+  });
+  return {parsedVars, parsedValues};
+}
+function parseCodebookObjectSheet(wb, sn){
+  const arrayRows=sheetArrayRows(wb,sn);
+  if(isDetailValueSheetRows(arrayRows)) return {parsedVars:0, parsedValues:0};
+  const rows=sheetRows(wb,sn); if(!rows.length) return {parsedVars:0, parsedValues:0};
+  const keys=Object.keys(rows[0]); let parsedVars=0, parsedValues=0;
+  const findKey=(patterns, fallbackIndex)=>{
+    for(const pat of patterns){ const found=keys.find(k=>pat.test(String(k))); if(found) return found; }
+    return fallbackIndex===null ? null : (keys[fallbackIndex]||null);
+  };
+  const varCol=findKey([/변수명/i,/varname/i,/variable/i,/^id$/i],0);
+  const labelCol=findKey([/문항\s*\/\s*변수\s*라벨/i,/문항.*라벨/i,/변수.*라벨/i,/문항.*내용/i,/레이블/i,/라벨/i,/label/i,/설명/i,/내용/i],null);
+  const optCol=findKey([/보기항목.*코드.*라벨/i,/보기항목/i,/값레이블/i,/value.*label/i,/코드\s*=\s*라벨/i,/options/i],null);
+  const codeCol=findKey([/^코드$/i,/응답.*코드/i,/^value$/i,/값/i],null);
+  const valLabelCol=findKey([/보기\s*라벨/i,/보기.*내용/i,/값.*라벨/i,/value.*label/i,/option.*label/i],null);
+  rows.forEach(row=>{
+    const vName=varCol && row[varCol]!==null && row[varCol]!==undefined ? String(row[varCol]).trim() : '';
+    if(!vName || /^no\.?$/i.test(vName)) return;
+    if(labelCol && row[labelCol]!==null && row[labelCol]!==undefined && String(row[labelCol]).trim()){
+      if(!codebookVarMap[vName]) parsedVars++;
+      codebookVarMap[vName]=String(row[labelCol]).trim();
+    } else if(!codebookVarMap[vName]) { codebookVarMap[vName]=vName; parsedVars++; }
+    codebookValueMap[vName]=codebookValueMap[vName]||{};
+    if(optCol && row[optCol]){
+      const pairs=parseOptions(row[optCol]);
+      Object.keys(pairs).forEach(k=>{ if(codebookValueMap[vName][k]===undefined) parsedValues++; codebookValueMap[vName][k]=pairs[k]; });
+    }
+    if(codeCol && valLabelCol && row[codeCol]!==null && row[codeCol]!==undefined && row[valLabelCol]){
+      const code=normVal(row[codeCol]);
+      const lab=String(row[valLabelCol]).trim();
+      if(code && lab){ if(codebookValueMap[vName][code]===undefined) parsedValues++; codebookValueMap[vName][code]=lab; }
+    }
+  });
+  return {parsedVars, parsedValues};
+}
+function parseCodebook(wb){
+  codebookVarMap={}; codebookValueMap={};
+  let totalVars=0, totalValues=0;
+  // 1차: 문항별 코드북/일반 코드북에서 변수 라벨과 보기항목 묶음 반영
+  wb.SheetNames.forEach(sn=>{
+    const arrayRows=sheetArrayRows(wb,sn);
+    if(isDetailValueSheetRows(arrayRows)) return;
+    const q=parseQuestionRowCodebook(arrayRows); totalVars+=q.parsedVars; totalValues+=q.parsedValues;
+    if(q.parsedVars===0 && q.parsedValues===0){
+      const o=parseCodebookObjectSheet(wb,sn); totalVars+=o.parsedVars; totalValues+=o.parsedValues;
+    }
+  });
+  // 2차: 보기항목 상세 시트는 값 라벨만 추가 반영하고 변수 라벨은 덮어쓰지 않음
+  wb.SheetNames.forEach(sn=>{
+    const arrayRows=sheetArrayRows(wb,sn);
+    const d=parseDetailValueCodebook(arrayRows); totalVars+=d.parsedVars; totalValues+=d.parsedValues;
+  });
+  return {vars:Object.keys(codebookVarMap).length, values:totalValues};
+}
+
+function analyzeVariables(){
+  numericVars=[]; scoreVars=[]; textVars=[]; npsScoreVars=[]; reasonVars={promoter:[], passive:[], detractor:[]}; varStats={};
+  const scoreKeywords=['만족','csi','점수','평가','추천','nps','동의','용이','편리','적절','유용','품질','이미지','신뢰','가치','서비스','응대','해결','충분','전문','정확','안정','쉽다','좋다'];
+  const excludeScoreKeywords=['id','resid','no','번호','나이','연령','age','지역','성별','gender','직업','소득','결혼','자녀','기종','스마트폰','phone','횟수','빈도','시간대','대기시간','분','기간','년','개월','방문회','순위','코드'];
+  headers.forEach(h=>{
+    const vals=rawData.map(r=>r[h]).filter(v=>!isBlank(v));
+    const nums=vals.map(toNum).filter(v=>v!==null);
+    const label=(h+' '+getVarLabel(h)).toLowerCase();
+    const uniqueVals=unique(vals.map(normVal));
+    varStats[h]={n:vals.length, numN:nums.length, missing:rawData.length-vals.length, min:nums.length?Math.min(...nums):null, max:nums.length?Math.max(...nums):null, unique:uniqueVals.length};
+    if(nums.length>0) numericVars.push(h);
+    if(vals.some(v=>typeof v==='string' && String(v).trim().length>6) && uniqueVals.length>Math.min(5, vals.length)) textVars.push(h);
+    const validNums=nums.filter(x=>x!==888&&x!==999&&x!==99&&x>=0&&x<=100);
+    const max=validNums.length?Math.max(...validNums):null, min=validNums.length?Math.min(...validNums):null, uniq=unique(validNums.map(String)).length;
+    const hasScoreKw=scoreKeywords.some(k=>label.includes(k)); const excluded=excludeScoreKeywords.some(k=>label.includes(k));
+    if(validNums.length>0 && min>=0 && max<=100 && !excluded){
+      if(max>10 || hasScoreKw || uniq>10){ scoreVars.push(h); }
+    }
+    const isReason=/nps_?추천|nps_?중립|nps_?비추천|추천.?사유|중립.?사유|비추천.?사유|추천.?이유|중립.?이유|비추천.?이유/i.test(label) || /nps_추천|nps_중립|nps_비추천/i.test(h);
+    if(isReason){
+      if(/비추천|detractor/i.test(label)) reasonVars.detractor.push(h);
+      else if(/중립|neutral|passive/i.test(label)) reasonVars.passive.push(h);
+      else if(/추천|promoter/i.test(label)) reasonVars.promoter.push(h);
+    }
+    const isNpsNamed=/(\[?nps\]?|추천의향|추천 의향)/i.test(label);
+    const excludedReason=/nps_?추천|nps_?중립|nps_?비추천|사유|이유|reason/i.test(label);
+    if(nums.length>0 && isNpsNamed && !excludedReason){
+      const npsNums=nums.filter(x=>x>=0&&x<=11&&x!==99&&x!==999&&x!==888);
+      if(npsNums.length>0) npsScoreVars.push(h);
+    }
+  });
+  scoreVars=unique(scoreVars); npsScoreVars=unique(npsScoreVars); textVars=unique(textVars);
+}
+
+function makeSelect(id, vars, requiredText='== 선택 ==', selected=''){
+  const el=document.getElementById(id); if(!el) return; el.innerHTML=`<option value="">${requiredText}</option>`+vars.map(labelOption).join(''); if(selected && vars.includes(selected)) el.value=selected;
+}
+function makeChecklist(containerId, type, vars, checkedVars=[]){
+  const box=document.getElementById(containerId); if(!box) return;
+  const searchId=containerId+'_search'; const cls=containerId+'_chk';
+  let html=`<input class="search-box" id="${searchId}" placeholder="변수명/라벨 검색" onkeyup="filterChecklist('${containerId}')">`;
+  if(containerId==='cmpChecklistBox') html+=`<div class="note">0~100점 스케일 후보는 상단에 배치하고 기본 선택했습니다. 그 외 숫자형 만족도 후보는 필요 시 추가 선택하세요.</div>`;
+  html+=`<div class="check-actions"><button class="btn-ghost btn-small" onclick="checkVisible('${containerId}',true)">보이는 항목 선택</button><button class="btn-ghost btn-small" onclick="checkVisible('${containerId}',false)">보이는 항목 해제</button></div>`;
+  html+=`<div class="check-scroll">`;
+  vars.forEach(v=>{const checked=checkedVars.includes(v)?'checked':''; html+=`<label data-var="${esc(v.toLowerCase())}" data-lbl="${esc(getVarLabel(v).toLowerCase())}"><input type="checkbox" class="${cls}" value="${esc(v)}" ${checked}> <span>${esc(optLabel(v))}</span></label>`;});
+  html+=`</div>`; box.innerHTML=html;
+}
+function filterChecklist(containerId){const kw=(document.getElementById(containerId+'_search')?.value||'').toLowerCase(); document.querySelectorAll(`#${containerId} label`).forEach(l=>{l.style.display=(l.dataset.var.includes(kw)||l.dataset.lbl.includes(kw))?'flex':'none';});}
+function checkVisible(containerId,check){document.querySelectorAll(`#${containerId} label`).forEach(l=>{if(l.style.display!=='none') l.querySelector('input').checked=check;});}
+function checkedValues(containerId){return Array.from(document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)).map(cb=>cb.value);}
+function isHundredScoreVar(v){const s=varStats[v]||{}; return s.numN>0 && s.min!==null && s.max!==null && s.min>=0 && s.max<=100 && s.max>10;}
+function orderedScoreVarsForCompare(){const base=scoreVars.length?scoreVars:numericVars; const hundred=base.filter(isHundredScoreVar); const rest=base.filter(v=>!isHundredScoreVar(v)); return hundred.concat(rest);}
+
+let compareVarOrder=[];
+function normalizeVarToken(token){
+  let t=String(token||'').trim();
+  const bracket=t.match(/^\[([^\]]+)\]/);
+  if(bracket) return bracket[1].trim();
+  t=t.replace(/^\[|\]$/g,'').trim();
+  return t;
+}
+function matchCompareVarToken(token, candidates){
+  const raw=String(token||'').trim();
+  const cleaned=normalizeVarToken(raw);
+  const lowered=cleaned.toLowerCase();
+  let found=candidates.find(v=>String(v).toLowerCase()===lowered);
+  if(found) return found;
+  found=candidates.find(v=>getVarLabel(v).trim().toLowerCase()===raw.toLowerCase() || getVarLabel(v).trim().toLowerCase()===lowered);
+  if(found) return found;
+  found=candidates.find(v=>raw.toLowerCase().startsWith(String(v).toLowerCase()+' ') || raw.toLowerCase().startsWith('['+String(v).toLowerCase()+']'));
+  if(found) return found;
+  return null;
+}
+function applyComparePastedOrder(){
+  const txt=document.getElementById('cmpPasteOrder')?.value||'';
+  const candidates=orderedScoreVarsForCompare();
+  const tokens=txt.split(/[\n,;\t]+/).map(x=>x.trim()).filter(Boolean);
+  const matched=[]; const missed=[];
+  tokens.forEach(t=>{const m=matchCompareVarToken(t,candidates); if(m && !matched.includes(m)) matched.push(m); else if(!m) missed.push(t);});
+  if(!matched.length){alert('매칭된 변수가 없습니다. 변수명 또는 [변수명] 형식으로 붙여넣어 주세요.'); return;}
+  document.querySelectorAll('#cmpChecklistBox input[type=checkbox]').forEach(cb=>{cb.checked=matched.includes(cb.value);});
+  compareVarOrder=matched;
+  const status=document.getElementById('cmpOrderStatus');
+  if(status) status.innerHTML=`적용 완료: ${matched.length}개 변수 순서 지정${missed.length?` · 미매칭 ${missed.length}개`:''}`;
+}
+function clearComparePastedOrder(){
+  compareVarOrder=[];
+  const el=document.getElementById('cmpPasteOrder'); if(el) el.value='';
+  const status=document.getElementById('cmpOrderStatus'); if(status) status.textContent='행 순서를 초기화했습니다. 체크리스트 표시 순서 기준으로 표가 생성됩니다.';
+}
+function compareSelectedValues(){
+  const checked=checkedValues('cmpChecklistBox');
+  const ordered=compareVarOrder.filter(v=>checked.includes(v));
+  const rest=checked.filter(v=>!ordered.includes(v));
+  return ordered.concat(rest);
+}
+function deleteTableRow(btn){
+  const tr=btn.closest('tr');
+  if(tr){
+    tr.remove();
+    updateCompareOrderFromResult();
+  }
+}
+let __dragSourceRow=null;
+let __pointerDragRowState=null;
+function updateCompareOrderFromResult(){
+  const wrap=document.getElementById('compareResult');
+  if(!wrap) return;
+  const order=Array.from(wrap.querySelectorAll('tbody tr[data-draggable-row="1"]'))
+    .map(tr=>tr.getAttribute('data-compare-var'))
+    .filter(Boolean);
+  if(order.length){
+    compareVarOrder=order.concat(compareVarOrder.filter(v=>!order.includes(v)));
+  }
+}
+function clearRowDragMarkers(container){
+  if(!container) return;
+  container.querySelectorAll('.drag-over-top,.drag-over-bottom,.dragging').forEach(x=>x.classList.remove('drag-over-top','drag-over-bottom','dragging'));
+}
+function beginPointerRowDrag(e,tr,container){
+  if(e.button!==undefined && e.button!==0) return;
+  e.preventDefault();
+  __pointerDragRowState={row:tr,tbody:tr.parentNode,container};
+  tr.classList.add('dragging');
+  document.addEventListener('pointermove',onPointerRowDrag,{passive:false});
+  document.addEventListener('pointerup',endPointerRowDrag,{once:true});
+  document.addEventListener('pointercancel',endPointerRowDrag,{once:true});
+  try{e.currentTarget.setPointerCapture(e.pointerId);}catch(err){}
+}
+function onPointerRowDrag(e){
+  if(!__pointerDragRowState) return;
+  e.preventDefault();
+  const {row,tbody,container}=__pointerDragRowState;
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const target=el && el.closest ? el.closest('tr[data-draggable-row="1"]') : null;
+  if(!target || target===row || target.parentNode!==tbody) return;
+  const rect=target.getBoundingClientRect();
+  const before=e.clientY < rect.top + rect.height/2;
+  if(before) tbody.insertBefore(row,target);
+  else tbody.insertBefore(row,target.nextSibling);
+  container.querySelectorAll('.drag-over-top,.drag-over-bottom').forEach(x=>x.classList.remove('drag-over-top','drag-over-bottom'));
+  target.classList.toggle('drag-over-top',before);
+  target.classList.toggle('drag-over-bottom',!before);
+}
+function endPointerRowDrag(){
+  if(!__pointerDragRowState) return;
+  const container=__pointerDragRowState.container;
+  document.removeEventListener('pointermove',onPointerRowDrag);
+  clearRowDragMarkers(container);
+  __pointerDragRowState=null;
+  updateCompareOrderFromResult();
+}
+function enableRowDrag(containerId){
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  const rows=container.querySelectorAll('tbody tr[data-draggable-row="1"]');
+  rows.forEach(tr=>{
+    tr.draggable=true;
+    tr.classList.add('draggable-row');
+    const handle=tr.querySelector('.drag-handle');
+    if(handle){
+      handle.title='이 아이콘을 잡고 행 순서를 변경할 수 있습니다.';
+      handle.setAttribute('role','button');
+      handle.setAttribute('tabindex','0');
+      handle.addEventListener('pointerdown',e=>beginPointerRowDrag(e,tr,container));
+      handle.addEventListener('keydown',e=>{
+        if(e.key==='ArrowUp'){ e.preventDefault(); moveTableRow(handle,-1); }
+        if(e.key==='ArrowDown'){ e.preventDefault(); moveTableRow(handle,1); }
+      });
+    }
+    // 브라우저 기본 HTML5 드래그도 보조로 유지
+    tr.addEventListener('dragstart',e=>{
+      if(e.target && e.target.closest && !e.target.closest('.drag-handle')){
+        e.preventDefault();
+        return;
+      }
+      __dragSourceRow=tr;
+      tr.classList.add('dragging');
+      if(e.dataTransfer){e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain','row');}
+    });
+    tr.addEventListener('dragover',e=>{
+      if(!__dragSourceRow || __dragSourceRow===tr || __dragSourceRow.parentNode!==tr.parentNode) return;
+      e.preventDefault();
+      const rect=tr.getBoundingClientRect();
+      const before=e.clientY < rect.top + rect.height/2;
+      tr.classList.toggle('drag-over-top',before);
+      tr.classList.toggle('drag-over-bottom',!before);
+    });
+    tr.addEventListener('dragleave',()=>{tr.classList.remove('drag-over-top','drag-over-bottom');});
+    tr.addEventListener('drop',e=>{
+      if(!__dragSourceRow || __dragSourceRow===tr || __dragSourceRow.parentNode!==tr.parentNode) return;
+      e.preventDefault();
+      const tbody=tr.parentNode;
+      const rect=tr.getBoundingClientRect();
+      const before=e.clientY < rect.top + rect.height/2;
+      if(before) tbody.insertBefore(__dragSourceRow,tr);
+      else tbody.insertBefore(__dragSourceRow,tr.nextSibling);
+      clearRowDragMarkers(container);
+      updateCompareOrderFromResult();
+    });
+    tr.addEventListener('dragend',()=>{
+      clearRowDragMarkers(container);
+      __dragSourceRow=null;
+      updateCompareOrderFromResult();
+    });
+  });
+}
+function moveTableRow(btn,dir){
+  const tr=btn.closest('tr');
+  if(!tr) return;
+  const tbody=tr.parentNode;
+  if(dir<0 && tr.previousElementSibling){tbody.insertBefore(tr,tr.previousElementSibling);}
+  if(dir>0 && tr.nextElementSibling){tbody.insertBefore(tr.nextElementSibling,tr);}
+  updateCompareOrderFromResult();
+}
+
+
+function optionList(vars, placeholder='== 선택 안 함 =='){
+  return `<option value="">${esc(placeholder)}</option>` + vars.map(labelOption).join('');
+}
+function getTrailingNumberParts(v){
+  const m=String(v||'').match(/^(.*?)(\d+)$/);
+  if(!m) return null;
+  return {prefix:m[1], num:Number(m[2]), width:m[2].length};
+}
+function varExists(name){return headers.includes(name);}
+function reasonPool(type){
+  const base=reasonVars[type]||[];
+  return unique(base.concat(headers.filter(h=>{
+    const text=(h+' '+getVarLabel(h)).toLowerCase();
+    if(type==='promoter') return /추천|promoter/.test(text) && !/비추천|detractor/.test(text) && !npsScoreVars.includes(h);
+    if(type==='passive') return /중립|neutral|passive/.test(text) && !npsScoreVars.includes(h);
+    if(type==='detractor') return /비추천|detractor/.test(text) && !npsScoreVars.includes(h);
+    return false;
+  })));
+}
+function guessReasonForNps(npsVar, type){
+  const pools={promoter:reasonPool('promoter'), passive:reasonPool('passive'), detractor:reasonPool('detractor')};
+  const pool=pools[type]||[];
+  if(!npsVar) return pool[0]||'';
+  const parts=getTrailingNumberParts(npsVar);
+  const offsets={promoter:1, passive:2, detractor:3};
+  if(parts){
+    const next=String(parts.num+offsets[type]).padStart(parts.width,'0');
+    const candidate=parts.prefix+next;
+    if(pool.includes(candidate) || varExists(candidate)) return candidate;
+  }
+  const stem=String(npsVar).replace(/[_\- ]?nps.*$/i,'').replace(/\d+$/,'').replace(/[_\-]+$/,'');
+  if(stem){
+    const sameStem=pool.find(v=>String(v).toLowerCase().startsWith(stem.toLowerCase()));
+    if(sameStem) return sameStem;
+  }
+  return pool[0]||'';
+}
+function renderNpsReasonMapping(){
+  const base=document.getElementById('npsReasonBaseVar');
+  if(!base) return;
+  const prevBase=base.value || config.npsVar || npsScoreVars[0] || '';
+  base.innerHTML=optionList(npsScoreVars.length?npsScoreVars:numericVars,'== 기준 NPS 변수 선택 ==');
+  if(prevBase && (npsScoreVars.includes(prevBase)||numericVars.includes(prevBase))) base.value=prevBase;
+  const p=document.getElementById('npsPromoterReasonVar');
+  const pa=document.getElementById('npsPassiveReasonVar');
+  const d=document.getElementById('npsDetractorReasonVar');
+  const prev={promoter:p?.value||'', passive:pa?.value||'', detractor:d?.value||''};
+  if(p) p.innerHTML=optionList(headers,'== 추천 사유 변수 선택 ==');
+  if(pa) pa.innerHTML=optionList(headers,'== 중립 사유 변수 선택 ==');
+  if(d) d.innerHTML=optionList(headers,'== 비추천 사유 변수 선택 ==');
+  autoMapNpsReasons(false, prev);
+}
+function autoMapNpsReasons(force=true, previous={}){
+  const base=document.getElementById('npsReasonBaseVar');
+  if(!base) return;
+  const npsVar=base.value || checkedValues('npsScoreBox')[0] || config.npsVar || npsScoreVars[0] || '';
+  if(npsVar) base.value=npsVar;
+  const targets={
+    promoter:document.getElementById('npsPromoterReasonVar'),
+    passive:document.getElementById('npsPassiveReasonVar'),
+    detractor:document.getElementById('npsDetractorReasonVar')
+  };
+  const labels={promoter:'추천', passive:'중립', detractor:'비추천'};
+  let msg=[];
+  Object.keys(targets).forEach(type=>{
+    const el=targets[type]; if(!el) return;
+    const guessed=guessReasonForNps(npsVar,type);
+    const keep=previous[type] || (!force ? el.value : '');
+    const val=(keep && headers.includes(keep)) ? keep : guessed;
+    if(val && headers.includes(val)) el.value=val;
+    msg.push(`${labels[type]}: ${val?esc(val)+' · '+esc(getVarLabel(val)):'미매칭'}`);
+  });
+  const st=document.getElementById('npsReasonMapStatus');
+  if(st) st.innerHTML=`현재 매칭: ${msg.join(' / ')}`;
+}
+
+function guessVar(patterns, vars=headers){const re=new RegExp(patterns.join('|'),'i'); return vars.find(v=>re.test(v+' '+getVarLabel(v)))||'';}
+
+let crossSelectedVar='';
+let crossSelectedTarget={target:'', var:''};
+let crossTargetVars={row:[], col:[], layer:[]};
+let crossExcludedRowKeys=new Set();
+let crossExcludedRowLabels={};
+let crossExclusionUndoStack=[];
+let crossLastSpecKey='';
+function crossRowExclusionKey(rowVar,rowKey){
+  return `${String(rowVar||'')}::${String(rowKey||'')}`;
+}
+function isCrossRowExcluded(rowVar,rowKey){
+  const scoped=crossRowExclusionKey(rowVar,rowKey);
+  return crossExcludedRowKeys.has(scoped) || crossExcludedRowKeys.has(String(rowKey||''));
+}
+function resetCrossRowExclusions(){
+  crossExcludedRowKeys.clear();
+  crossExcludedRowLabels={};
+  crossExclusionUndoStack=[];
+  generateCrossTab();
+}
+function excludeCrossRowItem(rowKey,label){
+  const key=String(rowKey||'');
+  if(!key) return;
+  const itemLabel=label||key;
+  if(!crossExcludedRowKeys.has(key)){
+    crossExclusionUndoStack.push({key,label:itemLabel});
+  }
+  crossExcludedRowKeys.add(key);
+  crossExcludedRowLabels[key]=itemLabel;
+  generateCrossTab();
+}
+function removeCrossRowExclusion(rowKey){
+  const key=String(rowKey||'');
+  crossExcludedRowKeys.delete(key);
+  delete crossExcludedRowLabels[key];
+  generateCrossTab();
+}
+function undoLastCrossRowExclusion(){
+  while(crossExclusionUndoStack.length){
+    const last=crossExclusionUndoStack.pop();
+    if(last && crossExcludedRowKeys.has(last.key)){
+      crossExcludedRowKeys.delete(last.key);
+      delete crossExcludedRowLabels[last.key];
+      generateCrossTab();
+      return;
+    }
+  }
+  alert('되돌릴 삭제 항목이 없습니다.');
+}
+function crossExclusionToolbarHtml(){
+  const keys=Array.from(crossExcludedRowKeys);
+  if(!keys.length){
+    return `<div class="cross-exclude-toolbar" data-no-export="1"><span class="note">행 항목명 옆 <b>삭제</b> 버튼을 누르면 해당 행 항목을 분석 Base에서 제외하고 비율을 재산정합니다.</span></div>`;
+  }
+  let html=`<div class="cross-exclude-toolbar" data-no-export="1"><b>삭제 후 재산정 항목</b>`;
+  keys.forEach(k=>{
+    html+=`<span class="chip">${esc(crossExcludedRowLabels[k]||k)} <button type="button" onclick='removeCrossRowExclusion(${JSON.stringify(k)})' title="삭제 제외 해제">×</button></span>`;
+  });
+  html+=`<button type="button" class="btn-ghost btn-small" onclick="undoLastCrossRowExclusion()">마지막 삭제 되돌리기</button>`;
+  html+=`<button type="button" class="btn-ghost btn-small" onclick="resetCrossRowExclusions()">삭제 항목 전체 초기화</button></div>`;
+  return html;
+}
+function crossVarIcon(v){
+  if(numericVars.includes(v)) return '🔢';
+  if(textVars.includes(v)) return '🔤';
+  return '🔴';
+}
+function crossVarShortLabel(v){
+  const label=getVarLabel(v);
+  return label===v ? `<span class="spss-var-label">${esc(v)}</span>` : `<span><span class="spss-var-name">${esc(v)}</span> <span class="spss-var-label">${esc(label)}</span></span>`;
+}
+function jsArg(v){ return esc(JSON.stringify(String(v))); }
+function readCrossTargetsFromSelects(){
+  const get=id=>document.getElementById(id)?.value||'';
+  // 숨김 select는 기존 저장값 호환용입니다. 실제 SPSS형 UI에서는 crossTargetVars가 기준입니다.
+  crossTargetVars={
+    row:[get('crossRow1'),get('crossRow2'),get('crossRow3')].filter(Boolean),
+    col:[get('crossCol'),get('crossCol2')].filter(Boolean),
+    layer:[get('crossLayer1')].filter(Boolean)
+  };
+}
+function setHiddenSelect(id, value){ const el=document.getElementById(id); if(el) el.value=value||''; }
+function syncCrossHiddenSelects(){
+  setHiddenSelect('crossRow1',crossTargetVars.row[0]); setHiddenSelect('crossRow2',crossTargetVars.row[1]); setHiddenSelect('crossRow3',crossTargetVars.row[2]);
+  setHiddenSelect('crossCol',crossTargetVars.col[0]); setHiddenSelect('crossCol2',crossTargetVars.col[1]);
+  setHiddenSelect('crossLayer1',crossTargetVars.layer[0]);
+}
+function allCrossAssigned(){ return crossTargetVars.row.concat(crossTargetVars.col,crossTargetVars.layer); }
+function initCrosstabSpssUI(){
+  if(!document.getElementById('crossVarList')) return;
+  readCrossTargetsFromSelects();
+  renderCrossVarList();
+  renderCrossTargetBoxes();
+}
+function filterCrossVarList(){ renderCrossVarList(); }
+function crossTargetName(target){
+  return target==='row'?'행':target==='col'?'열':target==='layer'?'레이어':target;
+}
+function updateCrossArrowButtons(){
+  const targetMeta={
+    row:{id:'crossRowArrow', move:'행으로 이동', returnText:'행 변수를 변수목록으로 복귀'},
+    col:{id:'crossColArrow', move:'열로 이동', returnText:'열 변수를 변수목록으로 복귀'},
+    layer:{id:'crossLayerArrow', move:'레이어로 이동', returnText:'레이어 변수를 변수목록으로 복귀'}
+  };
+  Object.keys(targetMeta).forEach(target=>{
+    const meta=targetMeta[target];
+    const btn=document.getElementById(meta.id);
+    if(!btn) return;
+    const isReturnMode=!!(crossSelectedTarget.var && crossSelectedTarget.target===target);
+    btn.textContent=isReturnMode?'←':'➜';
+    btn.classList.toggle('return-mode', isReturnMode);
+    btn.title=isReturnMode?meta.returnText:`왼쪽 변수는 ${crossTargetName(target)}로 이동`;
+    btn.setAttribute('aria-label', isReturnMode?meta.returnText:meta.move);
+  });
+}
+function updateCrossSelectedStatus(){
+  updateCrossArrowButtons();
+  const st=document.getElementById('crossSelectedStatus');
+  if(!st) return;
+  if(crossSelectedTarget.var){
+    st.innerHTML=`선택 변수: <b>${esc(crossSelectedTarget.var)}</b> <span class="spss-var-muted">${esc(getVarLabel(crossSelectedTarget.var))}</span> · ${esc(crossTargetName(crossSelectedTarget.target))}에서 선택됨 · 해당 화살표 클릭 시 변수목록으로 복귀`;
+  } else if(crossSelectedVar) {
+    st.innerHTML=`선택 변수: <b>${esc(crossSelectedVar)}</b> <span class="spss-var-muted">${esc(getVarLabel(crossSelectedVar))}</span> · 왼쪽 변수목록에서 선택됨`;
+  } else {
+    st.textContent='선택 변수: 없음';
+  }
+}
+function selectCrossVar(v){
+  crossSelectedVar=v;
+  crossSelectedTarget={target:'', var:''};
+  renderCrossTargetBoxes();
+  renderCrossVarList();
+  updateCrossSelectedStatus();
+}
+function selectCrossTargetVar(target,v){
+  crossSelectedTarget={target, var:v};
+  crossSelectedVar='';
+  renderCrossVarList();
+  renderCrossTargetBoxes();
+  updateCrossSelectedStatus();
+}
+function focusReturnedCrossVar(v){
+  const list=document.getElementById('crossVarList');
+  if(!list || !v) return;
+  setTimeout(()=>{
+    const item=Array.from(list.querySelectorAll('.spss-var-item')).find(el=>el.dataset.crossVar===v);
+    if(!item) return;
+    item.scrollIntoView({block:'center', behavior:'smooth'});
+    item.classList.add('returned','selected');
+    setTimeout(()=>item.classList.remove('returned'), 1400);
+  }, 0);
+}
+function renderCrossVarList(focusVar=''){
+  const list=document.getElementById('crossVarList'); if(!list) return;
+  let kw=(document.getElementById('crossVarSearch')?.value||'').toLowerCase().trim();
+  if(focusVar){
+    const searchable=(String(focusVar)+' '+String(getVarLabel(focusVar))).toLowerCase();
+    if(kw && !searchable.includes(kw)){
+      const searchEl=document.getElementById('crossVarSearch');
+      if(searchEl) searchEl.value='';
+      kw='';
+    }
+  }
+  const assigned=new Set(allCrossAssigned());
+  const visible=headers.filter(v=>{
+    if(assigned.has(v)) return false;
+    if(!kw) return true;
+    return String(v).toLowerCase().includes(kw) || String(getVarLabel(v)).toLowerCase().includes(kw);
+  });
+  if(!visible.length){ list.innerHTML='<div class="spss-target-empty">표시할 변수가 없습니다.</div>'; return; }
+  list.innerHTML=visible.map(v=>`<div class="spss-var-item ${crossSelectedVar===v?'selected':''}" data-cross-var="${esc(v)}" onclick="selectCrossVar(${jsArg(v)})" ondblclick="moveCrossSelected('row')" title="${esc(getVarLabel(v))}"><span class="spss-var-icons">${crossVarIcon(v)}</span>${crossVarShortLabel(v)}</div>`).join('');
+  if(focusVar) focusReturnedCrossVar(focusVar);
+}
+function moveCrossSelected(target){
+  if(crossSelectedTarget.var){
+    if(crossSelectedTarget.target!==target){
+      alert(`${crossTargetName(crossSelectedTarget.target)} 영역에서 선택한 변수입니다. 해당 영역의 화살표를 눌러 변수목록으로 복귀하세요.`);
+      return;
+    }
+    removeCrossTarget(target,crossSelectedTarget.var);
+    return;
+  }
+  if(!crossSelectedVar){ alert('왼쪽 변수 목록 또는 행/열/레이어 영역에서 변수를 먼저 선택하세요.'); return; }
+  addCrossTarget(target,crossSelectedVar);
+}
+function addCrossTarget(target,v){
+  const max={row:3,col:999,layer:1}[target]||1;
+  if(allCrossAssigned().includes(v)){ alert('이미 행/열/레이어에 배치된 변수입니다.'); return; }
+  if((crossTargetVars[target]||[]).length>=max){
+    alert(target==='row'?'행 그룹은 최대 3차까지 지원합니다.':target==='layer'?'레이어는 1개만 지원합니다.':'열 변수 배치 한도를 초과했습니다.');
+    return;
+  }
+  crossTargetVars[target].push(v);
+  if(crossSelectedVar===v) crossSelectedVar='';
+  crossSelectedTarget={target:'', var:''};
+  syncCrossHiddenSelects(); renderCrossTargetBoxes(); renderCrossVarList(); updateCrossSelectedStatus();
+}
+function removeCrossTarget(target,v){
+  crossTargetVars[target]=(crossTargetVars[target]||[]).filter(x=>x!==v);
+  crossSelectedTarget={target:'', var:''};
+  crossSelectedVar=v;
+  syncCrossHiddenSelects(); renderCrossTargetBoxes(); renderCrossVarList(v); updateCrossSelectedStatus();
+}
+function clearCrossTarget(target){
+  if(!(crossTargetVars[target]||[]).length) return;
+  const removed=crossTargetVars[target].slice();
+  crossTargetVars[target]=[];
+  crossSelectedTarget={target:'', var:''};
+  crossSelectedVar=removed[0]||'';
+  syncCrossHiddenSelects(); renderCrossTargetBoxes(); renderCrossVarList(crossSelectedVar); updateCrossSelectedStatus();
+}
+function resetCrossTargets(){
+  crossTargetVars={row:[], col:[], layer:[]}; crossSelectedVar=''; crossSelectedTarget={target:'', var:''};
+  crossExcludedRowKeys.clear(); crossExcludedRowLabels={}; crossExclusionUndoStack=[]; crossLastSpecKey='';
+  syncCrossHiddenSelects(); renderCrossTargetBoxes(); renderCrossVarList(); updateCrossSelectedStatus();
+  const result=document.getElementById('crossResult'); if(result) result.innerHTML='<p class="placeholder">행/열 변수를 SPSS 방식으로 배치한 뒤 확인을 누르세요.</p>';
+}
+function renderTargetItem(target,v,i){
+  const idx=target==='row'?`${i+1}차 행`:target==='col'?`열 ${i+1}`:'레이어';
+  const selected=(crossSelectedTarget.target===target && crossSelectedTarget.var===v)?' selected':'';
+  return `<div class="spss-target-item${selected}" onclick="selectCrossTargetVar(${jsArg(target)},${jsArg(v)})" title="선택 후 ←로 바뀐 화살표 버튼을 누르면 변수목록으로 복귀합니다."><span><b>${esc(idx)}</b> · ${esc(v)} <span class="spss-var-muted">${esc(getVarLabel(v))}</span></span><button type="button" class="spss-target-remove" onclick="event.stopPropagation(); removeCrossTarget(${jsArg(target)},${jsArg(v)})" title="제거 후 변수목록 원래 위치로 이동">×</button></div>`;
+}
+function renderCrossTargetBoxes(){
+  const rowBox=document.getElementById('crossRowBox');
+  const colBox=document.getElementById('crossColBox');
+  const layerItems=document.getElementById('crossLayerItems');
+  if(rowBox) rowBox.innerHTML=crossTargetVars.row.length?crossTargetVars.row.map((v,i)=>renderTargetItem('row',v,i)).join(''):'<div class="spss-target-empty">행 변수 없음</div>';
+  if(colBox) colBox.innerHTML=crossTargetVars.col.length?crossTargetVars.col.map((v,i)=>renderTargetItem('col',v,i)).join(''):'<div class="spss-target-empty">열 변수 없음</div>';
+  if(layerItems) layerItems.innerHTML=crossTargetVars.layer.length?crossTargetVars.layer.map((v,i)=>renderTargetItem('layer',v,i)).join(''):'<div class="spss-target-empty">레이어 변수 없음</div>';
+  updateCrossArrowButtons();
+}
+
+function overviewDistributionCandidates(){
+  return headers.filter(v=>{
+    const text=(v+' '+getVarLabel(v)).toLowerCase();
+    const s=varStats[v]||{};
+    if(!v || !s.n || !s.unique) return false;
+    if(/(^|\b)(id|caseid|respondent|respid|no)(\b|$)|아이디|응답자.?번호|관리.?번호|일련.?번호/.test(text)) return false;
+    if(s.unique>80) return false;
+    if(textVars.includes(v) && s.unique>30) return false;
+    const likelySegment=/성별|gender|연령|age|지역|area|시도|권역|거주|고객|등급|rating|grade|segment|유형|type|그룹|group|직업|소득|이용|경험|기간|빈도|횟수|주거래|branch|firm|company|brand/i.test(text);
+    if(scoreVars.includes(v) && !likelySegment) return false;
+    return true;
+  });
+}
+function overviewDefaultDistVars(){
+  const candidates=overviewDistributionCandidates();
+  const pick=(patterns)=>candidates.find(v=>new RegExp(patterns.join('|'),'i').test(v+' '+getVarLabel(v)));
+  const gender=pick(['성별','gender']);
+  const ageGroup=pick(['age_?r','연령.?리코드','연령대','age.?group','age.?grp','age.?cat','age.*rec']);
+  const age=ageGroup || pick(['^age\\b','\\bage\\b','연령']);
+  const area=pick(['지역','area','권역','시도','거주지','province','city']);
+  return unique([gender,age,area].filter(Boolean));
+}
+function overviewCategoryKeys(v, rows=rawData){
+  const dataKeys=[];
+  rows.forEach(r=>{ if(!isBlank(r[v])){ const k=normVal(r[v]); if(!dataKeys.includes(k)) dataKeys.push(k); }});
+  const labelKeys=codebookValueMap[v]?Object.keys(codebookValueMap[v]):[];
+  const ordered=[];
+  labelKeys.forEach(k=>{ const nk=normVal(k); if(dataKeys.includes(nk) && !ordered.includes(nk)) ordered.push(nk); });
+  dataKeys.forEach(k=>{ if(!ordered.includes(k)) ordered.push(k); });
+  return ordered;
+}
+function renderOverviewSampleDistribution(vars){
+  if(!vars || !vars.length || !config.companyVar) return '';
+  const comps=companyKeys();
+  const selected=unique(vars).filter(v=>v && v!==config.companyVar && headers.includes(v));
+  if(!selected.length) return '';
+  let html='<div class="overview-dist-section" style="margin-top:22px;"><h3 style="font-size:15px;margin:0 0 8px;color:#174ea6;">기업별 표본분포 상세</h3><div class="note">각 표의 %는 해당 기업 내 해당 분류 기준의 유효 응답 n을 100%로 계산합니다.</div>';
+  selected.forEach(v=>{
+    const catsAll=overviewCategoryKeys(v);
+    if(!catsAll.length) return;
+    const maxCats=30;
+    const cats=catsAll.slice(0,maxCats);
+    const hiddenCnt=Math.max(0,catsAll.length-cats.length);
+    html+=`<div class="overview-dist-block" style="margin-top:16px;"><h4 style="font-size:13px;margin:0 0 6px;color:#333;">${esc(getVarLabel(v))} <span class="tiny">[${esc(v)}]</span></h4>`;
+    if(hiddenCnt>0) html+=`<div class="warn">보기항목이 ${catsAll.length}개로 많아 상위 ${maxCats}개 항목만 표시했습니다. 필요한 경우 별도 분류변수로 리코딩 후 선택하세요.</div>`;
+    html+='<table class="overview-dist-table"><thead><tr><th rowspan="2">기업</th><th rowspan="2">유효 n</th>';
+    cats.forEach(k=>{ html+=`<th colspan="2">${esc(getValueLabel(v,k))}</th>`; });
+    html+='</tr><tr>';
+    cats.forEach(()=>{ html+='<th>n</th><th>%</th>'; });
+    html+='</tr></thead><tbody>';
+    comps.forEach(c=>{
+      const subset=rowsByCompany(c);
+      const valid=subset.filter(r=>!isBlank(r[v]));
+      const denom=valid.length;
+      html+=`<tr><td class="left bold">${esc(getValueLabel(config.companyVar,c))}</td><td>${denom.toLocaleString()}</td>`;
+      cats.forEach(k=>{
+        const cnt=valid.filter(r=>normVal(r[v])===k).length;
+        html+=`<td>${cnt.toLocaleString()}</td><td>${pct(cnt,denom)}</td>`;
+      });
+      html+='</tr>';
+    });
+    const validAll=rawData.filter(r=>!isBlank(r[v]));
+    const denomAll=validAll.length;
+    html+=`<tr class="bold"><td class="left">전체</td><td>${denomAll.toLocaleString()}</td>`;
+    cats.forEach(k=>{
+      const cnt=validAll.filter(r=>normVal(r[v])===k).length;
+      html+=`<td>${cnt.toLocaleString()}</td><td>${pct(cnt,denomAll)}</td>`;
+    });
+    html+='</tr></tbody></table></div>';
+  });
+  html+='</div>';
+  return html;
+}
+
+function setupUI(){
+  config.companyVar=config.companyVar||guessVar(['기업','브랜드','회사','은행','카드사','firm','company','brand'], headers);
+  config.csiVar=config.csiVar||guessVar(['csi','종합만족','전반.*만족','고객만족'], scoreVars);
+  config.npsVar=config.npsVar||npsScoreVars[0]||guessVar(['nps','추천의향'], numericVars);
+  const allOpt=[''].concat(headers);
+  makeSelect('ovCompany', headers, '== 기업/브랜드 변수 선택 ==', config.companyVar);
+  makeSelect('ovCsi', scoreVars.length?scoreVars:numericVars, '== CSI/만족도 변수 선택 ==', config.csiVar);
+  makeSelect('ovNps', npsScoreVars.length?npsScoreVars:numericVars, '== NPS 변수 선택 안 함 ==', config.npsVar);
+  ['cmpGroup1','cmpGroup2','crossRow1','crossRow2','crossRow3','crossCol','crossCol2','crossLayer1','mrGroup','vocGroup'].forEach(id=>makeSelect(id, headers, (id==='crossCol'||id==='crossCol2')?'== 열 변수 선택 ==':(id==='crossLayer1'?'== 레이어 선택 안 함 ==':'== 선택 안 함 ==')));
+  makeSelect('ipaTarget', scoreVars.length?scoreVars:numericVars, '== 종속 변수 선택 ==', config.csiVar);
+  makeSelect('ipaCompanyFilter', ['__ALL__'].concat(companyKeys()), '== 전체 기업 =='); document.getElementById('ipaCompanyFilter').querySelector('option[value="__ALL__"]').textContent='전체 기업';
+  renderCompanySelects();
+  makeChecklist('ovDistChecklistBox','overviewDist',overviewDistributionCandidates(),overviewDefaultDistVars());
+  const cmpVars=orderedScoreVarsForCompare();
+  const defaultCmp=cmpVars.filter(isHundredScoreVar);
+  const defaultScore=scoreVars.slice(0, Math.min(8, scoreVars.length));
+  makeChecklist('cmpChecklistBox','score',cmpVars,defaultCmp);
+  makeChecklist('ipaChecklistBox','score',scoreVars,defaultScore);
+  makeChecklist('npsScoreBox','nps',npsScoreVars,npsScoreVars.slice(0,1));
+  renderNpsReasonMapping();
+  initCrosstabSpssUI();
+  makeChecklist('mrChecklistBox','mr',headers,[]);
+  makeChecklist('vocChecklistBox','voc',textVars,textVars.slice(0,2));
+  applyConfig(false);
+}
+function companyKeys(){const cv=config.companyVar||document.getElementById('ovCompany')?.value; if(!cv) return []; return unique(rawData.map(r=>r[cv]).filter(v=>!isBlank(v)).map(normVal)).sort((a,b)=>a.localeCompare(b,'ko'));}
+function renderCompanySelects(){
+  const keys=companyKeys();
+  const cmp=document.getElementById('cmpRefCompany');
+  const cmpPrev=cmp ? cmp.value : '';
+  const ipa=document.getElementById('ipaCompanyFilter');
+  const ipaPrev=ipa ? ipa.value : '__ALL__';
+  const opts='<option value="">== 기준 기업 선택 ==</option>'+keys.map(k=>`<option value="${esc(k)}">${esc(getValueLabel(config.companyVar,k))}</option>`).join('');
+  if(cmp){ cmp.innerHTML=opts; if(cmpPrev && keys.includes(cmpPrev)) cmp.value=cmpPrev; }
+  if(ipa){ ipa.innerHTML='<option value="__ALL__">전체 기업</option>'+keys.map(k=>`<option value="${esc(k)}">${esc(getValueLabel(config.companyVar,k))}</option>`).join(''); if(ipaPrev==='__ALL__'||keys.includes(ipaPrev)) ipa.value=ipaPrev; }
+}
+function switchTab(tabId){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`)?.classList.add('active'); document.getElementById(tabId)?.classList.add('active');}
+function applyConfig(run=true){
+  config.companyVar=document.getElementById('ovCompany')?.value||''; config.csiVar=document.getElementById('ovCsi')?.value||''; config.npsVar=document.getElementById('ovNps')?.value||''; config.scaleMode=document.getElementById('scaleMode')?.value||'auto'; config.scoreFormat=document.getElementById('scoreFormat')?.value||'int'; renderCompanySelects(); if(run) generateOverview();
+}
+function applyConfigAndRun(){applyConfig(true); generateQuality();}
+function validScoreRaw(v,x){const n=toNum(x); if(n===null) return null; if([99,888,999,9999].includes(n)) return null; return n;}
+function convertedScore(v,x){const n=validScoreRaw(v,x); if(n===null) return null; const st=varStats[v]||{}; const max=st.max; const mode=config.scaleMode; if(mode==='raw') return n; if(mode==='x10') return (max!==null && max<=10)?n*10:n; if(mode==='norm10') return (n-1)/9*100; if(mode==='norm5') return (n-1)/4*100; if(mode==='auto') return (max!==null && max<=10)?n*10:n; return n;}
+function scoreStats(rows, v){const arr=rows.map(r=>convertedScore(v,r[v])).filter(x=>x!==null&&Number.isFinite(x)); return {n:arr.length, mean:mean(arr)};}
+function npsNormalized(v,x){const n=validScoreRaw(v,x); if(n===null) return null; const nums=rawData.map(r=>toNum(r[v])).filter(z=>z!==null&&z>=0&&z<=11); const min=nums.length?Math.min(...nums):0; const max=nums.length?Math.max(...nums):10; if(min>=1 && max<=11) return n-1; return n;}
+function npsStats(rows, v){let valid=0,p=0,pa=0,d=0; rows.forEach(r=>{const s=npsNormalized(v,r[v]); if(s===null||s<0||s>10) return; valid++; if(s>=9)p++; else if(s>=7)pa++; else d++;}); return {n:valid,promoter:p,passive:pa,detractor:d,nps:valid?((p/valid)-(d/valid))*100:null};}
+function rankItems(items, key){const sorted=items.filter(x=>x[key]!==null&&Number.isFinite(x[key])).sort((a,b)=>b[key]-a[key]); let rank=1,last=null,same=0; sorted.forEach((it,i)=>{if(last!==null && it[key]===last){same++;}else{rank=i+1; same=0; last=it[key];} it[key+'Rank']=rank;});}
+function rowCompanyValue(r){return config.companyVar?normVal(r[config.companyVar]):'ALL';}
+function rowsByCompany(key){return rawData.filter(r=>!config.companyVar || rowCompanyValue(r)===key);}
+
+function generateOverview(){
+  applyConfig(false); const wrap=document.getElementById('overviewResult'); if(!rawData.length) return;
+  if(!config.companyVar || !config.csiVar){wrap.innerHTML='<div class="warn">기업/브랜드 변수와 CSI 변수를 선택해야 조사개요를 생성할 수 있습니다.</div>'; return;}
+  const comps=companyKeys(); const total=rawData.length; const rows=[];
+  comps.forEach(c=>{const subset=rowsByCompany(c); const ss=scoreStats(subset,config.csiVar); const ns=config.npsVar?npsStats(subset,config.npsVar):null; rows.push({company:c,label:getValueLabel(config.companyVar,c),totalN:subset.length,dist:subset.length/total*100,csi:ss.mean,csiN:ss.n,nps:ns?ns.nps:null,npsN:ns?ns.n:0,promoter:ns?ns.promoter:0,passive:ns?ns.passive:0,detractor:ns?ns.detractor:0});});
+  rankItems(rows,'csi'); if(config.npsVar) rankItems(rows,'nps'); const overallCsi=scoreStats(rawData,config.csiVar); const overallNps=config.npsVar?npsStats(rawData,config.npsVar):null;
+  let html=`<div class="kpi-grid"><div class="kpi"><div class="label">전체 표본</div><div class="value">${total.toLocaleString()}</div><div class="sub">업로드 데이터 기준</div></div><div class="kpi"><div class="label">분석 기업 수</div><div class="value">${comps.length}</div><div class="sub">${esc(getVarLabel(config.companyVar))}</div></div><div class="kpi"><div class="label">전체 CSI</div><div class="value">${fmtScore(overallCsi.mean)}</div><div class="sub">유효 n=${overallCsi.n.toLocaleString()}</div></div>`;
+  if(config.npsVar) html+=`<div class="kpi"><div class="label">전체 NPS</div><div class="value">${fmtNps(overallNps.nps)}</div><div class="sub">유효 n=${overallNps.n.toLocaleString()}</div></div>`; html+='</div>';
+  html+=`<button class="btn-secondary btn-small" onclick="downloadAllTables('overviewResult','조사개요')">엑셀 내보내기</button><table><thead><tr><th>기업</th><th>표본수</th><th>표본분포</th><th>CSI 유효 n</th><th>CSI 점수</th><th>CSI 순위</th>`;
+  if(config.npsVar) html+=`<th>NPS 유효 n</th><th>NPS 점수</th><th>NPS 순위</th><th>추천%</th><th>중립%</th><th>비추천%</th>`; html+='</tr></thead><tbody>';
+  rows.forEach(r=>{html+=`<tr><td class="left bold">${esc(r.label)}</td><td>${r.totalN.toLocaleString()}</td><td>${r.dist.toFixed(1)}%</td><td>${r.csiN.toLocaleString()}</td><td class="score">${fmtScore(r.csi)}</td><td>${r.csiRank?r.csiRank+'위':'-'}</td>`; if(config.npsVar){html+=`<td>${r.npsN.toLocaleString()}</td><td class="score">${fmtNps(r.nps)}</td><td>${r.npsRank?r.npsRank+'위':'-'}</td><td>${pct(r.promoter,r.npsN)}</td><td>${pct(r.passive,r.npsN)}</td><td>${pct(r.detractor,r.npsN)}</td>`;} html+='</tr>';}); html+='</tbody></table>';
+  html+=renderOverviewSampleDistribution(checkedValues('ovDistChecklistBox'));
+  html+=overviewInsights(rows, overallCsi, overallNps); wrap.innerHTML=html;
+}
+function overviewInsights(rows, overallCsi, overallNps){let li=[]; if(rows.length){const top=rows.filter(r=>r.csi!==null).sort((a,b)=>b.csi-a.csi)[0]; const low=rows.filter(r=>r.csi!==null).sort((a,b)=>a.csi-b.csi)[0]; const biggest=rows.sort((a,b)=>b.totalN-a.totalN)[0]; li.push(`전체 ${rawData.length.toLocaleString()}명 중 표본 비중이 가장 큰 기업은 <b>${esc(biggest.label)}</b>(${biggest.dist.toFixed(1)}%)입니다.`); if(top&&low){li.push(`CSI는 <b>${esc(top.label)}</b>이 ${fmtScore(top.csi)}점으로 가장 높고, <b>${esc(low.label)}</b>이 ${fmtScore(low.csi)}점으로 가장 낮습니다.`); if(top!==low) li.push(`최고-최저 CSI 격차는 <b>${fmtScore(top.csi-low.csi)}점</b>입니다.`);} if(config.npsVar){const nt=rows.filter(r=>r.nps!==null).sort((a,b)=>b.nps-a.nps)[0]; const nl=rows.filter(r=>r.nps!==null).sort((a,b)=>a.nps-b.nps)[0]; if(nt&&nl) li.push(`NPS는 <b>${esc(nt.label)}</b>이 ${fmtNps(nt.nps)}로 가장 높고, <b>${esc(nl.label)}</b>이 ${fmtNps(nl.nps)}로 가장 낮습니다.`);}}
+  return `<div class="insights"><h3>자동 인사이트</h3><ul>${li.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;}
+
+function segmentCombos(groupVars){
+  let map={}; rawData.forEach(r=>{let key=[], labels=[]; let ok=true; groupVars.forEach(g=>{if(isBlank(r[g])) ok=false; else {key.push(normVal(r[g])); labels.push(getValueLabel(g,r[g]));}}); if(ok){const k=key.join('|||')||'ALL'; map[k]={key:k,parts:key,labels:labels.length?labels:['전체']};}});
+  return Object.values(map).sort((a,b)=>a.labels.join(' ').localeCompare(b.labels.join(' '),'ko'));
+}
+function matchCombo(r, groupVars, combo){if(!groupVars.length) return true; for(let i=0;i<groupVars.length;i++){if(normVal(r[groupVars[i]])!==combo.parts[i]) return false;} return true;}
+function generateCompare(){
+  applyConfig(false); const wrap=document.getElementById('compareResult'); if(!config.companyVar){wrap.innerHTML='<div class="warn">조사개요에서 기업/브랜드 변수를 먼저 선택하세요.</div>'; return;}
+  const vars=compareSelectedValues(); if(!vars.length){alert('비교할 만족도 요인을 선택하세요.'); return;}
+  const refRaw=document.getElementById('cmpRefCompany').value;
+  const allCompanies=companyKeys();
+  const ref=refRaw||allCompanies[0];
+  const companies=[ref].concat(allCompanies.filter(c=>c!==ref));
+  const g1=document.getElementById('cmpGroup1').value, g2=document.getElementById('cmpGroup2').value;
+  let groupVars=[g1,g2].filter(v=>v&&v!==config.companyVar);
+  const combos=segmentCombos(groupVars);
+  const maxSeg=Number(document.getElementById('cmpMaxSeg').value)||20;
+  if(combos.length>maxSeg){wrap.innerHTML=`<div class="warn">세그먼트 조합이 ${combos.length}개입니다. 로딩 방지를 위해 최대 ${maxSeg}개 이하로 줄이거나 최대값을 조정하세요.</div>`; return;}
+
+  // 기업 우선 → 세그먼트 순서로 열 생성: KB 20/30/40... | 삼성 20/30/40...
+  const colUnits=[];
+  companies.forEach(co=>{
+    combos.forEach(c=>{
+      colUnits.push({combo:c, company:co, label:`${getValueLabel(config.companyVar,co)}${groupVars.length?' · '+c.labels.join(' · '):''}`});
+    });
+  });
+
+  let html=`<div class="btn-row"><button class="btn-secondary btn-small" onclick="downloadTable('compareResult','만족도비교')">엑셀 내보내기</button><span class="cross-drag-help">↕ 아이콘 드래그로 행 순서 변경 · ▲/▼ 버튼으로도 이동 가능</span></div>`;
+  html+=`<table><thead><tr><th rowspan="2">관리</th><th rowspan="2">변수명</th><th rowspan="2">문항/레이블</th><th colspan="${colUnits.length}" class="th-blue">점수</th><th colspan="${colUnits.length}" class="th-orange">기준기업 대비 격차</th><th colspan="${colUnits.length}" class="th-green">순위</th><th colspan="${colUnits.length}">n</th></tr><tr>`;
+  ['score','gap','rank','n'].forEach(()=>{colUnits.forEach(u=>{html+=`<th>${esc(u.label)}</th>`;});});
+  html+='</tr></thead><tbody>';
+  vars.forEach(v=>{
+    let per={};
+    combos.forEach(c=>{
+      let stats=[];
+      companies.forEach(co=>{
+        const subset=rawData.filter(r=>rowCompanyValue(r)===co && matchCombo(r,groupVars,c));
+        const ss=scoreStats(subset,v);
+        stats.push({company:co, mean:scoreBasisForCompare(ss.mean), rawMean:ss.mean, n:ss.n});
+      });
+      rankItems(stats,'mean');
+      stats.forEach(s=>{per[c.key+'@@'+s.company]=s;});
+    });
+    html+=`<tr data-draggable-row="1" data-compare-var="${esc(v)}"><td><span class="drag-handle" title="드래그해서 순서 변경">↕</span><button class="btn-ghost btn-small row-move-btn" onclick="moveTableRow(this,-1)" title="위로 이동">▲</button><button class="btn-ghost btn-small row-move-btn" onclick="moveTableRow(this,1)" title="아래로 이동">▼</button><button class="btn-ghost btn-small row-delete-btn" onclick="deleteTableRow(this)" title="이 행 삭제">삭제</button></td><td class="left small mono">${esc(v)}</td><td class="left bold">${esc(getVarLabel(v))}</td>`;
+    // 점수
+    colUnits.forEach(u=>{const s=per[u.combo.key+'@@'+u.company]; html+=`<td class="score">${fmtScore(s?.mean)}</td>`;});
+    // 기준기업 대비 격차
+    colUnits.forEach(u=>{const s=per[u.combo.key+'@@'+u.company]; const refS=per[u.combo.key+'@@'+ref]; const gap=(refS&&s&&refS.mean!==null&&s.mean!==null)?refS.mean-s.mean:null; html+=`<td class="${signClass(gap)}">${fmtGap(gap)}</td>`;});
+    // 순위
+    colUnits.forEach(u=>{const s=per[u.combo.key+'@@'+u.company]; html+=`<td>${s?.mean!==null?s.meanRank+'위':'-'}</td>`;});
+    // n
+    colUnits.forEach(u=>{const s=per[u.combo.key+'@@'+u.company]; html+=`<td>${s?s.n.toLocaleString():'-'}</td>`;});
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+  enableRowDrag('compareResult');
+}
+
+
+function buildNpsScoreTable(vars){
+  if(!config.companyVar) return '<div class="warn">조사개요에서 기업/브랜드 변수를 먼저 선택하세요. 기업 변수가 없으면 조사개요에서 선택 후 실행하세요.</div>';
+  const companies=companyKeys();
+  let html=`<button class="btn-secondary btn-small" onclick="downloadTable('npsScoreResult','NPS점수비교')">엑셀 내보내기</button><h3>NPS 점수 비교</h3>`;
+  html+=`<table><thead><tr><th rowspan="2">변수명</th><th rowspan="2">문항/레이블</th><th colspan="${companies.length}" class="th-blue">NPS</th><th colspan="${companies.length}" class="th-green">추천%</th><th colspan="${companies.length}">중립%</th><th colspan="${companies.length}" class="th-orange">비추천%</th><th colspan="${companies.length}">유효 n</th></tr><tr>`;
+  ['nps','promoter','passive','detractor','n'].forEach(()=>{companies.forEach(co=>{html+=`<th>${esc(getValueLabel(config.companyVar,co))}</th>`;});});
+  html+='</tr></thead><tbody>';
+  vars.forEach(v=>{
+    const stats={}; companies.forEach(co=>{stats[co]=npsStats(rowsByCompany(co),v);});
+    html+=`<tr><td class="left small mono">${esc(v)}</td><td class="left bold">${esc(getVarLabel(v))}</td>`;
+    companies.forEach(co=>{html+=`<td class="score">${fmtNps(stats[co].nps)}</td>`;});
+    companies.forEach(co=>{html+=`<td>${pct(stats[co].promoter,stats[co].n)}</td>`;});
+    companies.forEach(co=>{html+=`<td>${pct(stats[co].passive,stats[co].n)}</td>`;});
+    companies.forEach(co=>{html+=`<td>${pct(stats[co].detractor,stats[co].n)}</td>`;});
+    companies.forEach(co=>{html+=`<td>${stats[co].n.toLocaleString()}</td>`;});
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
+}
+function generateNpsScoreOnly(){
+  applyConfig(false);
+  const wrap=document.getElementById('npsScoreResult');
+  const vars=checkedValues('npsScoreBox');
+  if(!vars.length){wrap.innerHTML='<div class="warn">NPS 점수 변수를 선택하세요.</div>'; return;}
+  wrap.innerHTML=buildNpsScoreTable(vars);
+  const base=document.getElementById('npsReasonBaseVar');
+  if(base && !base.value){base.value=vars[0]; autoMapNpsReasons(false);}
+}
+function generateNpsReasonOnly(){
+  applyConfig(false);
+  const wrap=document.getElementById('npsReasonResult');
+  if(!config.companyVar){wrap.innerHTML='<div class="warn">조사개요에서 기업/브랜드 변수를 먼저 선택하세요.</div>'; return;}
+  const selected=checkedValues('npsScoreBox');
+  let baseVar=document.getElementById('npsReasonBaseVar')?.value || selected[0] || config.npsVar || npsScoreVars[0] || '';
+  if(!baseVar){wrap.innerHTML='<div class="warn">사유 연계 기준 NPS 변수를 선택하세요.</div>'; return;}
+  if(document.getElementById('npsReasonBaseVar')) document.getElementById('npsReasonBaseVar').value=baseVar;
+  const mode=document.getElementById('npsReasonMode')?.value || 'all';
+  wrap.innerHTML=`<button class="btn-secondary btn-small" onclick="downloadTable('npsReasonResult','NPS사유연계')">엑셀 내보내기</button>`+generateNpsReasonsMatrix(baseVar, mode);
+}
+function generateNps(){
+  generateNpsScoreOnly();
+  generateNpsReasonOnly();
+}
+function groupNameByNps(score){if(score===null) return null; if(score>=9) return 'promoter'; if(score>=7) return 'passive'; return 'detractor';}
+function selectedReasonVar(type){
+  const ids={promoter:'npsPromoterReasonVar', passive:'npsPassiveReasonVar', detractor:'npsDetractorReasonVar'};
+  return document.getElementById(ids[type])?.value || '';
+}
+function collectReasonCounts(baseRows, reasonVar){
+  const counts={}; let caseHits=0, responses=0;
+  baseRows.forEach(r=>{
+    if(isBlank(r[reasonVar])) return;
+    const lbl=getValueLabel(reasonVar,r[reasonVar]);
+    counts[lbl]=(counts[lbl]||0)+1;
+    responses++; caseHits++;
+  });
+  return {counts, responses, caseHits};
+}
+function generateNpsReasonsMatrix(npsVar, mode){
+  const companies=config.companyVar?companyKeys():['ALL'];
+  const groups=mode==='all'?['promoter','passive','detractor']:[mode];
+  const groupLabels={promoter:'추천',passive:'중립',detractor:'비추천'};
+  let html=`<h3 style="margin-top:24px">NPS 사유 연계 분석</h3><div class="note">기준 NPS 변수: <b>${esc(npsVar)}</b> · ${esc(getVarLabel(npsVar))}<br>사유 비율은 <b>NPS 유효 응답자수</b>를 Base로 계산합니다. 전체 사유 선택 시 추천·중립·비추천 사유 비율의 합계가 100%가 되도록 사유 미응답도 별도 항목으로 포함합니다.</div>`;
+
+  const getValidNpsRows=(co)=>{
+    const rows=(co==='ALL'?rawData:rowsByCompany(co));
+    return rows.filter(r=>{
+      const s=npsNormalized(npsVar,r[npsVar]);
+      return s!==null && s>=0 && s<=10;
+    });
+  };
+  const npsRowsByCompany={};
+  companies.forEach(co=>{ npsRowsByCompany[co]=getValidNpsRows(co); });
+
+  function buildReasonData(g){
+    const rv=selectedReasonVar(g);
+    const data={}; const allReasons=new Set();
+    companies.forEach(co=>{
+      const npsRows=npsRowsByCompany[co]||[];
+      const groupRows=npsRows.filter(r=>groupNameByNps(npsNormalized(npsVar,r[npsVar]))===g);
+      const cc=collectReasonCounts(groupRows,rv);
+      const missing=Math.max(0, groupRows.length-(cc.caseHits||0));
+      data[co]={reasonVar:rv,npsBase:npsRows.length,groupBase:groupRows.length,missing,counts:cc.counts||{},responses:cc.responses||0,caseHits:cc.caseHits||0};
+      Object.keys(cc.counts||{}).forEach(x=>allReasons.add(x));
+      if(missing>0) allReasons.add('사유 미응답/미매칭');
+    });
+    return {rv,data,reasons:Array.from(allReasons)};
+  }
+
+  if(mode==='all'){
+    const allGroupData={}; let combined=[];
+    groups.forEach(g=>{
+      const gd=buildReasonData(g); allGroupData[g]=gd;
+      gd.reasons.forEach(reason=>combined.push({group:g,reason}));
+    });
+    const groupOrder={promoter:0,passive:1,detractor:2};
+    combined=combined.sort((a,b)=>{
+      const ga=groupOrder[a.group]??99, gb=groupOrder[b.group]??99;
+      if(ga!==gb) return ga-gb;
+      const ta=companies.reduce((s,co)=>{
+        const d=allGroupData[a.group].data[co];
+        return s+(a.reason==='사유 미응답/미매칭'?d.missing:(d.counts[a.reason]||0));
+      },0);
+      const tb=companies.reduce((s,co)=>{
+        const d=allGroupData[b.group].data[co];
+        return s+(b.reason==='사유 미응답/미매칭'?d.missing:(d.counts[b.reason]||0));
+      },0);
+      return tb-ta || a.reason.localeCompare(b.reason,'ko');
+    });
+    html+=`<h4>전체 사유 통합표</h4>`;
+    html+=`<table><thead><tr><th rowspan="2">NPS 그룹</th><th rowspan="2">사유</th><th colspan="${companies.length}" class="th-blue">NPS Base 기준 비율</th><th colspan="${companies.length}">빈도</th><th colspan="${companies.length}">NPS Base</th></tr><tr>`;
+    ['rate','count','base'].forEach(()=>{companies.forEach(co=>{html+=`<th>${esc(getValueLabel(config.companyVar,co))}</th>`;});});
+    html+='</tr></thead><tbody>';
+    if(!combined.length){html+=`<tr><td colspan="${2+companies.length*3}" class="small">표시할 사유 응답이 없습니다.</td></tr>`;}
+    combined.forEach(item=>{
+      html+=`<tr><td class="bold">${groupLabels[item.group]}</td><td class="left">${esc(item.reason)}</td>`;
+      companies.forEach(co=>{const d=allGroupData[item.group].data[co]; const cnt=item.reason==='사유 미응답/미매칭'?d.missing:(d.counts[item.reason]||0); html+=`<td>${pct(cnt,d.npsBase)}</td>`;});
+      companies.forEach(co=>{const d=allGroupData[item.group].data[co]; const cnt=item.reason==='사유 미응답/미매칭'?d.missing:(d.counts[item.reason]||0); html+=`<td>${cnt.toLocaleString()}</td>`;});
+      companies.forEach(co=>{const d=allGroupData[item.group].data[co]; html+=`<td>${d.npsBase.toLocaleString()}</td>`;});
+      html+='</tr>';
+    });
+    html+=`<tr style="background:#f1f3f4;font-weight:800"><td colspan="2">합계</td>`;
+    companies.forEach(co=>{html+=`<td>100.0%</td>`;});
+    companies.forEach(co=>{html+=`<td>${(npsRowsByCompany[co]||[]).length.toLocaleString()}</td>`;});
+    companies.forEach(co=>{html+=`<td>${(npsRowsByCompany[co]||[]).length.toLocaleString()}</td>`;});
+    html+='</tr></tbody></table>';
+    return html;
+  }
+
+  groups.forEach(g=>{
+    const gd=buildReasonData(g);
+    const rv=gd.rv;
+    if(!rv){html+=`<div class="warn">${groupLabels[g]} 사유 변수가 선택되지 않았습니다.</div>`; return;}
+    const reasons=gd.reasons.sort((a,b)=>{
+      const ta=companies.reduce((s,co)=>{const d=gd.data[co]; return s+(a==='사유 미응답/미매칭'?d.missing:(d.counts[a]||0));},0);
+      const tb=companies.reduce((s,co)=>{const d=gd.data[co]; return s+(b==='사유 미응답/미매칭'?d.missing:(d.counts[b]||0));},0);
+      return tb-ta || a.localeCompare(b,'ko');
+    });
+    html+=`<h4>${groupLabels[g]} 사유: ${esc(rv)} · ${esc(getVarLabel(rv))}</h4>`;
+    html+=`<table><thead><tr><th rowspan="2">사유</th><th colspan="${companies.length}" class="th-blue">NPS Base 기준 비율</th><th colspan="${companies.length}">빈도</th><th colspan="${companies.length}">NPS Base</th><th colspan="${companies.length}">${groupLabels[g]} 그룹 n</th></tr><tr>`;
+    ['rate','count','base','groupbase'].forEach(()=>{companies.forEach(co=>{html+=`<th>${esc(getValueLabel(config.companyVar,co))}</th>`;});});
+    html+='</tr></thead><tbody>';
+    if(!reasons.length){html+=`<tr><td colspan="${1+companies.length*4}" class="small">표시할 사유 응답이 없습니다.</td></tr>`;}
+    reasons.forEach(reason=>{
+      html+=`<tr><td class="left">${esc(reason)}</td>`;
+      companies.forEach(co=>{const d=gd.data[co]; const cnt=reason==='사유 미응답/미매칭'?d.missing:(d.counts[reason]||0); html+=`<td>${pct(cnt,d.npsBase)}</td>`;});
+      companies.forEach(co=>{const d=gd.data[co]; const cnt=reason==='사유 미응답/미매칭'?d.missing:(d.counts[reason]||0); html+=`<td>${cnt.toLocaleString()}</td>`;});
+      companies.forEach(co=>{const d=gd.data[co]; html+=`<td>${d.npsBase.toLocaleString()}</td>`;});
+      companies.forEach(co=>{const d=gd.data[co]; html+=`<td>${d.groupBase.toLocaleString()}</td>`;});
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+  });
+  return html;
+}
+
+function pearson(x,y){const n=x.length; if(!n) return 0; let sx=0,sy=0,sxy=0,sx2=0,sy2=0; for(let i=0;i<n;i++){sx+=x[i];sy+=y[i];sxy+=x[i]*y[i];sx2+=x[i]*x[i];sy2+=y[i]*y[i];} const den=Math.sqrt((n*sx2-sx*sx)*(n*sy2-sy*sy)); return den===0?0:(n*sxy-sx*sy)/den;}
+function generateIpa(){
+  applyConfig(false); const target=document.getElementById('ipaTarget').value; let vars=checkedValues('ipaChecklistBox').filter(v=>v!==target); const max=Number(document.getElementById('ipaMaxFactors').value)||30; if(vars.length>max) vars=vars.slice(0,max); const company=document.getElementById('ipaCompanyFilter').value||'__ALL__'; const rows=(company==='__ALL__')?rawData:rawData.filter(r=>rowCompanyValue(r)===company); if(!target||!vars.length){alert('종속 변수와 하위 만족도 요인을 선택하세요.'); return;}
+  const points=[]; vars.forEach(v=>{let xs=[],ys=[]; rows.forEach(r=>{const x=convertedScore(v,r[v]); const y=convertedScore(target,r[target]); if(x!==null&&y!==null){xs.push(x);ys.push(y);}}); if(xs.length>=30){points.push({varName:v,label:getVarLabel(v),x:pearson(xs,ys),y:mean(xs),n:xs.length});}});
+  if(!points.length){document.getElementById('ipaTable').innerHTML='<div class="warn">유효표본 30건 이상인 요인이 없습니다.</div>'; return;}
+  const meanX=mean(points.map(p=>p.x)), meanY=mean(points.map(p=>p.y));
+  const ctx=document.getElementById('ipaChart'); if(charts.ipa) charts.ipa.destroy(); charts.ipa=new Chart(ctx,{type:'scatter',data:{datasets:[{label:company==='__ALL__'?'전체':getValueLabel(config.companyVar,company),data:points.map(p=>({x:p.x,y:p.y,label:p.label}))}]},options:{maintainAspectRatio:false,plugins:{datalabels:{align:'top',formatter:v=>v.label,font:{size:10}},tooltip:{callbacks:{label:c=>`${c.raw.label}: 중요도 ${c.raw.x.toFixed(3)}, 수행도 ${fmtScore(c.raw.y)}`}}},scales:{x:{title:{display:true,text:'중요도(상관계수)'}},y:{title:{display:true,text:'수행도(평균 점수)'}}}}});
+  let html=`<button class="btn-secondary btn-small" onclick="downloadTable('ipaTable','IPA분석')">엑셀 내보내기</button><table><thead><tr><th>요인</th><th>수행도</th><th>중요도(r)</th><th>n</th><th>분면</th></tr></thead><tbody>`; points.forEach(p=>{let q=(p.x>=meanX&&p.y>=meanY)?'유지/강화':(p.x>=meanX&&p.y<meanY)?'중점 개선':(p.x<meanX&&p.y<meanY)?'우선순위 낮음':'과잉 가능'; html+=`<tr><td class="left bold">${esc(optLabel(p.varName))}</td><td>${fmtScore(p.y)}</td><td>${p.x.toFixed(4)}</td><td>${p.n.toLocaleString()}</td><td>${q}</td></tr>`;}); html+='</tbody></table>'; document.getElementById('ipaTable').innerHTML=html;
+}
+
+function parseMergeSpec(spec){
+  const groups=[]; const direct={};
+  String(spec||'').split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).forEach((part,idx)=>{
+    let label=''; let expr=part;
+    if(part.includes('=')){ const sp=part.split('='); expr=sp.shift().trim(); label=sp.join('=').trim(); }
+    const vals=expr.split(/[+,|]/).map(x=>x.trim()).filter(Boolean).map(normVal);
+    if(!vals.length) return;
+    const key='MERGE_'+idx+'_'+vals.join('_');
+    groups.push({key, vals, label});
+    vals.forEach(v=>direct[v]={key,label,vals});
+  });
+  return {groups,direct};
+}
+function mergedValue(varName, val, merge){
+  const raw=normVal(val);
+  if(merge && merge.direct && merge.direct[raw]){
+    const g=merge.direct[raw];
+    const label=g.label || g.vals.map(x=>getValueLabel(varName,x)).join('+');
+    return {key:g.key,label};
+  }
+  return {key:raw,label:getValueLabel(varName,raw)};
+}
+function getCombo(row, vars, rowMerge=null){
+  if(!vars.length) return {key:'ALL', labels:['전체']};
+  let key=[],labels=[];
+  for(const v of vars){
+    if(isBlank(row[v])) return null;
+    const mv=mergedValue(v,row[v],rowMerge);
+    key.push(mv.key); labels.push(mv.label);
+  }
+  return {key:key.join('|||'), labels};
+}
+function crossDenom(cnt,rowKey,colKey,rowTotals,colTotals,total,base){
+  if(base==='col') return colTotals[colKey]||0;
+  if(base==='total') return total||0;
+  return rowTotals[rowKey]||0;
+}
+function crossTotalPctForRow(rowKey,rowTotals,total,base){
+  if(base==='row') return '100.0%';
+  return pct(rowTotals[rowKey]||0,total);
+}
+function comboSortValue(part){
+  const p=String(part??'').split('+')[0].trim();
+  const n=Number(p);
+  return Number.isFinite(n)?{kind:0,num:n,str:p}:{kind:1,num:0,str:p};
+}
+function sortComboKeys(a,b){
+  const aa=String(a).split('|||'), bb=String(b).split('|||');
+  const len=Math.max(aa.length,bb.length);
+  for(let i=0;i<len;i++){
+    const va=comboSortValue(aa[i]??''), vb=comboSortValue(bb[i]??'');
+    if(va.kind!==vb.kind) return va.kind-vb.kind;
+    if(va.kind===0 && va.num!==vb.num) return va.num-vb.num;
+    const cmp=va.str.localeCompare(vb.str,'ko'); if(cmp) return cmp;
+  }
+  return 0;
+}
+function crossPct(n,d,showSymbol=true){
+  if(!d) return '-';
+  const val=((n/d)*100).toFixed(1);
+  return showSymbol?val+'%':val;
+}
+function crossCellHtml(cnt,denom,showN,showPctSymbol){
+  const p=crossPct(cnt,denom,showPctSymbol);
+  return showN?`<span class="score">${p}</span><br><span class="tiny">(${cnt.toLocaleString()})</span>`:`<span class="score">${p}</span>`;
+}
+function crossRowTotalPct(rowKey,rowTotals,total,base,showPctSymbol){
+  if(base==='row') return showPctSymbol?'100.0%':'100.0';
+  return crossPct(rowTotals[rowKey]||0,total,showPctSymbol);
+}
+function crossValueHtml(cnt, denom, showN, showPctSymbol){
+  const p=crossPct(cnt,denom,showPctSymbol);
+  if(!showN) return `<span class="num">${p}</span>`;
+  return `<span class="num">${p}</span><br><span class="tiny">(${cnt.toLocaleString()})</span>`;
+}
+function crossPctBaseLabel(pctBase,rowVars,colVars){
+  if(pctBase==='col') return `${colVars.map(getVarLabel).join(' / ')} 중 ${document.getElementById('crossShowPctSymbol')?.checked===false?'비율':'%'}`;
+  if(pctBase==='row') return `${rowVars.length?rowVars.map(getVarLabel).join(' * '):'전체'} 중 ${document.getElementById('crossShowPctSymbol')?.checked===false?'비율':'%'}`;
+  return `전체 중 ${document.getElementById('crossShowPctSymbol')?.checked===false?'비율':'%'}`;
+}
+function crossComboLabelFromMap(key,map){
+  return map[key] || String(key).split('|||').join(' / ');
+}
+function crossParallelColKey(varName,valueKey){
+  return `${String(varName)}|||${String(valueKey)}`;
+}
+function crossParallelColMetaFromKey(key){
+  const parts=String(key).split('|||');
+  return {varName:parts[0]||'', valueKey:parts.slice(1).join('|||')};
+}
+function sortParallelColKeys(a,b,colVars){
+  const aa=crossParallelColMetaFromKey(a), bb=crossParallelColMetaFromKey(b);
+  const ia=colVars.indexOf(aa.varName), ib=colVars.indexOf(bb.varName);
+  if(ia!==ib) return ia-ib;
+  return sortComboKeys(aa.valueKey,bb.valueKey);
+}
+function buildCrossColumnHeaders(colVars, cols, colMap, stubCount, rowHeaderLabel=''){
+  const totalLabel='전체';
+  const colTitle=colVars.map(getVarLabel).join(' / ');
+  let html='<thead>';
+  html+=`<tr><th colspan="${stubCount}" class="stub-head"></th><th colspan="${cols.length+1}" class="col-title">${esc(colTitle)}</th></tr>`;
+  if(colVars.length>1){
+    const groups=[];
+    cols.forEach(c=>{
+      const meta=colMap[c] || crossParallelColMetaFromKey(c);
+      const key=meta.varName;
+      const last=groups[groups.length-1];
+      if(last && last.key===key) last.span++;
+      else groups.push({key,span:1,label:getVarLabel(key)});
+    });
+    html+='<tr>';
+    html+=`<th class="stub-head">${stubCount>0?esc(rowHeaderLabel||''):''}</th>`;
+    for(let i=1;i<stubCount;i++) html+='<th class="stub-head"></th>';
+    groups.forEach(g=>html+=`<th colspan="${g.span}">${esc(g.label)}</th>`);
+    html+=`<th rowspan="2">${esc(totalLabel)}</th></tr>`;
+    html+='<tr>';
+    for(let i=0;i<stubCount;i++) html+='<th class="stub-head"></th>';
+    cols.forEach(c=>html+=`<th>${esc((colMap[c]&&colMap[c].label)||crossComboLabelFromMap(c,colMap))}</th>`);
+    html+='</tr>';
+  } else {
+    html+='<tr>';
+    html+=`<th class="stub-head">${stubCount>0?esc(rowHeaderLabel||''):''}</th>`;
+    for(let i=1;i<stubCount;i++) html+='<th class="stub-head"></th>';
+    cols.forEach(c=>html+=`<th>${esc((colMap[c]&&colMap[c].label)||crossComboLabelFromMap(c,colMap))}</th>`);
+    html+=`<th>${esc(totalLabel)}</th></tr>`;
+  }
+  html+='</thead>';
+  return html;
+}
+function crossLayerKeyLabel(layerVar, layer){
+  if(!layerVar) return '전체';
+  return layer.label;
+}
+function renderCrossSpssTableForRow(rowVar,colVars,layerVar,layerItems,pctBase,showN,showPctSymbol,rowMerge,colMerge){
+  const title=[getVarLabel(rowVar), colVars.map(getVarLabel).join(' / ')].filter(Boolean).join(' * ') + ' 교차표';
+  const percentNote=crossPctBaseLabel(pctBase,[rowVar],colVars);
+  const rowTitle=getVarLabel(rowVar);
+  const stubCount=2;
+  const layerBlocks=[];
+
+  layerItems.forEach(layer=>{
+    const subset=layerVar ? rawData.filter(r=>normVal(r[layerVar])===layer.key) : rawData;
+    let mat={}, rowMap={}, colMap={}, rowTotals={}, colTotals={}, total=0;
+    subset.forEach(r=>{
+      const rowCombo=getCombo(r,[rowVar],rowMerge);
+      if(!rowCombo) return;
+      if(isCrossRowExcluded(rowVar,rowCombo.key)) return;
+      const rk=rowCombo.key;
+      rowMap[rk]=rowCombo.labels;
+      rowTotals[rk]=(rowTotals[rk]||0)+1;
+      total++;
+      colVars.forEach(cv=>{
+        if(isBlank(r[cv])) return;
+        const mv=mergedValue(cv,r[cv],colMerge);
+        if(!mv || isBlank(mv.key)) return;
+        const ck=crossParallelColKey(cv,mv.key);
+        colMap[ck]={varName:cv,valueKey:mv.key,label:mv.label,varLabel:getVarLabel(cv)};
+        mat[rk]=mat[rk]||{};
+        mat[rk][ck]=(mat[rk][ck]||0)+1;
+        colTotals[ck]=(colTotals[ck]||0)+1;
+      });
+    });
+    const rows=Object.keys(rowMap).sort(sortComboKeys);
+    const cols=Object.keys(colMap).sort((a,b)=>sortParallelColKeys(a,b,colVars));
+    if(!rows.length||!cols.length) return;
+    layerBlocks.push({layer,mat,rowMap,colMap,rowTotals,colTotals,total,rows,cols});
+  });
+
+  if(!layerBlocks.length) return '';
+
+  const allColKeys=unique(layerBlocks.flatMap(b=>b.cols)).sort((a,b)=>sortParallelColKeys(a,b,colVars));
+  const allColMap={};
+  layerBlocks.forEach(b=>Object.assign(allColMap,b.colMap));
+
+  let html=`<div class="cross-spss-title">${esc(title)}</div><div class="cross-spss-percent-note">${esc(percentNote)}</div>`;
+
+  layerBlocks.forEach((block,blockIdx)=>{
+    const {layer,mat,rowMap,rowTotals,colTotals,total,rows}=block;
+    if(layerVar){
+      html+=`<div class="cross-spss-layer-caption">${esc(getVarLabel(layerVar))}: ${esc(crossLayerKeyLabel(layerVar,layer))}</div>`;
+    }
+    html+=`<table class="cross-spss-table">`;
+    html+=buildCrossColumnHeaders(colVars,allColKeys,allColMap,stubCount,rowTitle);
+    html+='<tbody>';
+
+    const rowSpan=rows.length+1;
+    rows.forEach((rk,idx)=>{
+      html+=`<tr${idx===0&&blockIdx>0&&!layerVar?' class="thin-top"':''}>`;
+      if(idx===0){
+        html+=`<td class="stub-var" rowspan="${rowSpan}">${esc(rowTitle)}</td>`;
+      }
+      const labels=rowMap[rk]||[];
+      const rowLabelText=labels.join(' / ');
+      const exKey=crossRowExclusionKey(rowVar,rk);
+      const exLabel=`${getVarLabel(rowVar)}: ${rowLabelText}`;
+      const delBtn=` <button type="button" class="cross-row-remove" data-no-export="1" onclick='excludeCrossRowItem(${JSON.stringify(exKey)},${JSON.stringify(exLabel)})' title="이 행 항목을 삭제하고 비율 재산정">삭제</button>`;
+      html+=`<td class="stub-cat">${esc(rowLabelText)}${delBtn}</td>`;
+      allColKeys.forEach(c=>{
+        const cnt=(mat[rk]&&mat[rk][c])||0;
+        const denom=crossDenom(cnt,rk,c,rowTotals,colTotals,total,pctBase);
+        html+=`<td>${crossValueHtml(cnt,denom,showN,showPctSymbol)}</td>`;
+      });
+      const rowTotal=rowTotals[rk]||0;
+      const totalDenom=(pctBase==='row') ? rowTotal : total;
+      html+=`<td>${crossValueHtml(rowTotal,totalDenom,showN,showPctSymbol)}</td>`;
+      html+='</tr>';
+    });
+
+    html+=`<tr class="total-row">`;
+    html+=`<td class="stub-cat">전체</td>`;
+    allColKeys.forEach(c=>{
+      const cnt=colTotals[c]||0;
+      let denom;
+      if(pctBase==='col') denom=cnt;
+      else if(pctBase==='row') denom=total;
+      else denom=total;
+      html+=`<td>${crossValueHtml(cnt,denom,showN,showPctSymbol)}</td>`;
+    });
+    html+=`<td>${crossValueHtml(total,total,showN,showPctSymbol)}</td>`;
+    html+='</tr>';
+    html+='</tbody></table>';
+  });
+  return html;
+}
+
+function generateCrossTab(){
+  const useSpssUi=!!document.getElementById('crossVarList');
+  if(useSpssUi) syncCrossHiddenSelects();
+  const rowVars=useSpssUi ? crossTargetVars.row.slice() : [document.getElementById('crossRow1').value,document.getElementById('crossRow2').value,document.getElementById('crossRow3').value].filter(Boolean);
+  const colVars=useSpssUi ? crossTargetVars.col.slice() : [document.getElementById('crossCol').value,document.getElementById('crossCol2')?.value||''].filter(Boolean);
+  const layerVar=useSpssUi ? (crossTargetVars.layer[0]||'') : (document.getElementById('crossLayer1')?.value||'');
+  const pctBase=document.getElementById('crossPctBase')?.value||'row';
+  const showN=document.getElementById('crossShowN')?.checked===true;
+  const showPctSymbol=document.getElementById('crossShowPctSymbol')?.checked!==false;
+  const rowMerge=parseMergeSpec(document.getElementById('crossRowMerge')?.value||'');
+  const colMerge=parseMergeSpec(document.getElementById('crossColMerge')?.value||'');
+  const wrap=document.getElementById('crossResult');
+  if(!colVars.length){alert('열 변수를 최소 1개 선택하세요.'); return;}
+  if(!rowVars.length){alert('행 변수를 최소 1개 선택하세요.'); return;}
+  const allVars=rowVars.concat(colVars,layerVar?[layerVar]:[]);
+  if(new Set(allVars).size!==allVars.length){alert('행/열/레이어 변수는 중복 배치할 수 없습니다.'); return;}
+  const specKey=JSON.stringify({rowVars,colVars,layerVar,rowMerge:document.getElementById('crossRowMerge')?.value||'',colMerge:document.getElementById('crossColMerge')?.value||''});
+  if(crossLastSpecKey && crossLastSpecKey!==specKey){
+    crossExcludedRowKeys.clear();
+    crossExcludedRowLabels={};
+    crossExclusionUndoStack=[];
+  }
+  crossLastSpecKey=specKey;
+
+  const layerItems=layerVar
+    ? unique(rawData.map(r=>r[layerVar]).filter(v=>!isBlank(v)).map(normVal)).sort(sortComboKeys).map(k=>({key:k,label:getValueLabel(layerVar,k)}))
+    : [{key:'__ALL__',label:'전체'}];
+  const pctLabel=pctBase==='col'?'열 기준 100%':pctBase==='total'?'전체 기준 100%':'행 기준 100%';
+
+  let html=`<div class="btn-row"><button class="btn-secondary btn-small" onclick="downloadAllTables('crossResult','교차분석')">엑셀 내보내기</button><span class="note">${esc(pctLabel)} · ${showN?'셀 n 표시':'셀 n 숨김'} · ${showPctSymbol?'% 기호 표시':'% 기호 생략'} · 열 변수 병렬 나열 · 레이어별 표 분리</span></div>`;
+  html+=crossExclusionToolbarHtml();
+  html+=`<div class="cross-spss-output">`;
+
+  const tableHtmls=rowVars.map(rowVar=>renderCrossSpssTableForRow(rowVar,colVars,layerVar,layerItems,pctBase,showN,showPctSymbol,rowMerge,colMerge)).filter(Boolean);
+  if(!tableHtmls.length){wrap.innerHTML='<div class="warn">유효 데이터가 없습니다.</div>'; return;}
+  html+=tableHtmls.join('');
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+function mrOptionEntries(v){
+  const map=codebookValueMap[v]||{};
+  let entries=Object.keys(map).map(code=>({code:normVal(code), label:String(map[code]).trim()})).filter(x=>x.code!=='' && x.label);
+  if(entries.length) return entries;
+  const vals=unique(rawData.map(r=>r[v]).filter(x=>!isBlank(x)).map(normVal));
+  if(vals.length>=2 && vals.length<=40){
+    return vals.sort((a,b)=>{
+      const na=toNum(a), nb=toNum(b);
+      if(na!==null && nb!==null) return na-nb;
+      return String(a).localeCompare(String(b),'ko');
+    }).map(code=>({code, label:getValueLabel(v,code)}));
+  }
+  return [];
+}
+function mrOptionSignature(v){
+  const entries=mrOptionEntries(v);
+  if(entries.length<2) return '';
+  return entries.map(x=>`${normVal(x.code)}=${String(x.label).trim()}`).join('|');
+}
+function mrBundleTitle(vars, idx){
+  const labels=vars.map(v=>getVarLabel(v)).filter(Boolean);
+  const prefix=labels[0] || vars[0] || `묶음 ${idx}`;
+  return `${prefix}${vars.length>1?` 외 ${vars.length-1}개 변수`:''}`;
+}
+function buildMrSameOptionBundles(vars){
+  const bucket={};
+  vars.forEach(v=>{
+    const sig=mrOptionSignature(v);
+    if(!sig) return;
+    if(!bucket[sig]) bucket[sig]=[];
+    bucket[sig].push(v);
+  });
+  return Object.keys(bucket)
+    .map((sig,i)=>({signature:sig, vars:bucket[sig], entries:mrOptionEntries(bucket[sig][0]), index:i+1}))
+    .filter(g=>g.vars.length>=2)
+    .sort((a,b)=>b.vars.length-a.vars.length || a.vars[0].localeCompare(b.vars[0],'ko'));
+}
+function mrCountBySegment(subset, vars, mode){
+  let counts={}, responses=0, cases=0;
+  subset.forEach(r=>{
+    let hit=false;
+    if(mode==='category'){
+      let set=new Set();
+      vars.forEach(v=>{ if(!isBlank(r[v])) set.add(getValueLabel(v,r[v])); });
+      set.forEach(x=>{ counts[x]=(counts[x]||0)+1; responses++; hit=true; });
+    } else {
+      vars.forEach(v=>{
+        const val=String(r[v]??'').trim();
+        if(val==='1'||val.toUpperCase()==='Y'||val==='선택'||val.toLowerCase()==='true'){
+          const x=getVarLabel(v);
+          counts[x]=(counts[x]||0)+1; responses++; hit=true;
+        }
+      });
+    }
+    if(hit) cases++;
+  });
+  return {counts,responses,cases,base:subset.length};
+}
+function mrOrderedKeys(counts, optionEntries){
+  const keys=[];
+  (optionEntries||[]).forEach(e=>{
+    const lab=String(e.label).trim();
+    if(lab && counts[lab]!==undefined && !keys.includes(lab)) keys.push(lab);
+  });
+  Object.keys(counts).sort((a,b)=>counts[b]-counts[a] || a.localeCompare(b,'ko')).forEach(k=>{ if(!keys.includes(k)) keys.push(k); });
+  return keys;
+}
+function renderMrBundleTable(group, mode, vars, title, optionEntries, metaText){
+  const segs=group?unique(rawData.map(r=>r[group]).filter(v=>!isBlank(v)).map(normVal)).sort((a,b)=>a.localeCompare(b,'ko')):['ALL'];
+  let html=`<div class="mr-bundle-card"><h3>${esc(title)}</h3>`;
+  if(metaText) html+=`<div class="mr-bundle-meta">${metaText}</div>`;
+  html+=`<div class="mr-var-tags">${vars.map(v=>`<span title="${esc(getVarLabel(v))}">${esc(v)}</span>`).join('')}</div>`;
+  segs.forEach(seg=>{
+    const subset=seg==='ALL'?rawData:rawData.filter(r=>normVal(r[group])===seg);
+    const stat=mrCountBySegment(subset,vars,mode);
+    const orderedKeys=mode==='category'?mrOrderedKeys(stat.counts,optionEntries):Object.keys(stat.counts).sort((a,b)=>stat.counts[b]-stat.counts[a] || a.localeCompare(b,'ko'));
+    html+=`<h4 style="margin:12px 0 6px;">${group?esc(getVarLabel(group)+': '+getValueLabel(group,seg)):'전체'}</h4>`;
+    html+=`<table><thead><tr><th>항목</th><th>빈도</th><th>응답비율</th><th>케이스비율</th><th>응답 Base</th><th>케이스 Base</th></tr></thead><tbody>`;
+    if(!orderedKeys.length){
+      html+=`<tr><td colspan="6" class="small">유효 응답 없음</td></tr>`;
+    } else {
+      orderedKeys.forEach(k=>{
+        html+=`<tr><td class="left bold">${esc(k)}</td><td>${(stat.counts[k]||0).toLocaleString()}</td><td>${pct(stat.counts[k]||0,stat.responses)}</td><td>${pct(stat.counts[k]||0,stat.base)}</td><td>${stat.responses.toLocaleString()}</td><td>${stat.base.toLocaleString()}</td></tr>`;
+      });
+    }
+    html+='</tbody></table>';
+  });
+  html+='</div>';
+  return html;
+}
+function generateMultiResponse(){
+  const group=document.getElementById('mrGroup').value;
+  const mode=document.getElementById('mrMode').value;
+  const bundleMode=document.getElementById('mrBundleMode')?.value || 'manual';
+  const vars=checkedValues('mrChecklistBox');
+  const wrap=document.getElementById('mrResult');
+  if(!vars.length){alert('다중응답 변수를 선택하세요.'); return;}
+  let html=`<div class="btn-row"><button class="btn-secondary btn-small" onclick="downloadAllTables('mrResult','다중응답')">엑셀 내보내기</button><span class="note">${mode==='category'?'변수값 결합형':'이분형 변수 나열형'} · ${bundleMode==='sameOptions'?'보기항목 동일 변수 자동 묶음':'선택 변수 전체 1개 묶음'}</span></div>`;
+
+  if(bundleMode==='sameOptions'){
+    if(mode!=='category'){
+      html+=`<div class="warn">이분형 변수 나열형은 변수명 자체가 항목이므로 보기항목 동일 묶음이 적용되지 않습니다. 변수값 결합형으로 변경해 주세요.</div>`;
+      wrap.innerHTML=html;
+      return;
+    }
+    const bundles=buildMrSameOptionBundles(vars);
+    const groupedVars=new Set(bundles.flatMap(g=>g.vars));
+    const excluded=vars.filter(v=>!groupedVars.has(v));
+    if(!bundles.length){
+      html+=`<div class="warn">선택 변수 중 보기항목 구조가 동일한 변수 묶음을 찾지 못했습니다. 코드북의 보기항목(코드=라벨)이 동일한 변수를 2개 이상 선택해야 합니다.</div>`;
+      wrap.innerHTML=html;
+      return;
+    }
+    html+=`<div class="ok">동일 보기항목 묶음 ${bundles.length}개를 자동 생성했습니다. 묶음에 포함되지 않은 변수 ${excluded.length}개는 제외했습니다.</div>`;
+    bundles.forEach((b,i)=>{
+      const optionText=b.entries.map(e=>`${esc(e.code)}=${esc(e.label)}`).join(' | ');
+      const title=`묶음 ${i+1}. ${esc(mrBundleTitle(b.vars,i+1))}`;
+      const meta=`포함 변수 ${b.vars.length}개 · 보기항목: ${optionText}`;
+      html+=renderMrBundleTable(group,mode,b.vars,title,b.entries,meta);
+    });
+    if(excluded.length){
+      html+=`<details class="mr-bundle-card"><summary class="bold">자동 묶음 제외 변수 ${excluded.length}개 보기</summary><div class="mr-var-tags">${excluded.map(v=>`<span title="${esc(getVarLabel(v))}">${esc(v)}</span>`).join('')}</div><div class="note">보기항목이 없거나, 동일한 보기항목을 가진 변수가 2개 미만인 변수입니다.</div></details>`;
+    }
+  } else {
+    html+=renderMrBundleTable(group,mode,vars,'선택 변수 통합 분석',mode==='category'?mrOptionEntries(vars[0]):[],`포함 변수 ${vars.length}개`);
+  }
+  wrap.innerHTML=html;
+}
+
+function tokenize(text){return String(text).toLowerCase().replace(/[\[\]{}()<>.,!?;:'"“”‘’/\\|@#$%^&*_+=~`·…\-]/g,' ').split(/\s+/).map(x=>x.trim()).filter(x=>x.length>=2&&!['그리고','그래서','하지만','너무','매우','정말','그냥','없음','없다','기타','해당없음','모름','좋다','좋음','불편','만족'].includes(x));}
+function generateVoc(){
+  const group=document.getElementById('vocGroup').value; const vars=checkedValues('vocChecklistBox'); const maxRows=Number(document.getElementById('vocMaxRows').value)||1000; const wrap=document.getElementById('vocResult'); if(!vars.length){alert('자유응답 변수를 선택하세요.'); return;}
+  const rows=rawData.slice(0,maxRows); let counts={}, examples=[]; rows.forEach(r=>{vars.forEach(v=>{if(!isBlank(r[v])){const txt=String(r[v]).trim(); examples.push({group:group?getValueLabel(group,r[group]):'전체',var:v,text:txt}); tokenize(txt).forEach(t=>counts[t]=(counts[t]||0)+1);}});});
+  let html=`<div class="warn">가벼운 분석을 위해 최대 ${maxRows.toLocaleString()}개 행만 분석합니다.</div><div class="two-col"><div><h3>주요 키워드</h3><table><thead><tr><th>키워드</th><th>빈도</th></tr></thead><tbody>`; Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,50).forEach(k=>html+=`<tr><td class="left bold">${esc(k)}</td><td>${counts[k]}</td></tr>`); html+='</tbody></table></div><div><h3>대표 원문</h3><table><thead><tr><th>그룹</th><th>변수</th><th>원문</th></tr></thead><tbody>'; examples.slice(0,80).forEach(e=>html+=`<tr><td>${esc(e.group)}</td><td>${esc(e.var)}</td><td class="left">${esc(e.text)}</td></tr>`); html+='</tbody></table></div></div>'; wrap.innerHTML=html;
+}
+
+function generateQuality(){
+  const wrap=document.getElementById('qualityResult'); if(!rawData.length){wrap.innerHTML='<div class="warn">데이터를 먼저 업로드하세요.</div>'; return;}
+  let html=`<div class="kpi-grid"><div class="kpi"><div class="label">전체 표본</div><div class="value">${rawData.length.toLocaleString()}</div></div><div class="kpi"><div class="label">전체 변수</div><div class="value">${headers.length.toLocaleString()}</div></div><div class="kpi"><div class="label">숫자형 변수</div><div class="value">${numericVars.length.toLocaleString()}</div></div><div class="kpi"><div class="label">만족도 후보</div><div class="value">${scoreVars.length.toLocaleString()}</div></div></div>`;
+  if(config.companyVar){const comps=companyKeys(); html+='<h3>기업별 표본수</h3><table><thead><tr><th>기업</th><th>n</th><th>분포</th></tr></thead><tbody>'; comps.forEach(c=>{const n=rowsByCompany(c).length; html+=`<tr><td class="left bold">${esc(getValueLabel(config.companyVar,c))}</td><td>${n.toLocaleString()}</td><td>${pct(n,rawData.length)}</td></tr>`;}); html+='</tbody></table>';}
+  const missing=headers.map(h=>({v:h,miss:varStats[h].missing,rate:varStats[h].missing/rawData.length*100,n:varStats[h].n})).sort((a,b)=>b.rate-a.rate).slice(0,30);
+  html+='<h3>결측률 상위 변수</h3><table><thead><tr><th>변수</th><th>유효 n</th><th>결측 n</th><th>결측률</th><th>코드북 매칭</th></tr></thead><tbody>'; missing.forEach(m=>html+=`<tr><td class="left">${esc(optLabel(m.v))}</td><td>${m.n.toLocaleString()}</td><td>${m.miss.toLocaleString()}</td><td>${m.rate.toFixed(1)}%</td><td>${codebookVarMap[m.v]?'Y':'-'}</td></tr>`); html+='</tbody></table>';
+  html+='<h3>만족도 후보 변수 점검</h3><table><thead><tr><th>변수</th><th>유효 n</th><th>Min</th><th>Max</th><th>Unique</th></tr></thead><tbody>'; scoreVars.forEach(v=>{const s=varStats[v]; html+=`<tr><td class="left">${esc(optLabel(v))}</td><td>${s.n.toLocaleString()}</td><td>${s.min??'-'}</td><td>${s.max??'-'}</td><td>${s.unique}</td></tr>`;}); html+='</tbody></table>'; wrap.innerHTML=html;
+}
+</script>
+</body>
+</html>
